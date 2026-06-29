@@ -1,0 +1,340 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800;900&display=swap');
+
+:root {
+    /* Neo-Brutalism Palette (White, Orange, Red) */
+    --primary: #FF2A2A;      /* Stark Red */
+    --secondary: #FF7B00;    /* Bright Orange */
+    --bg-main: #FFFFFF;      /* Stark White */
+    --bg-panel: #F4F4F0;     /* Off-white for panels */
+    --border-color: #000000;
+    --text-main: #000000;
+    
+    /* Brutalist Tokens */
+    --border-thick: 4px solid var(--border-color);
+    --shadow-hard: 6px 6px 0px var(--border-color);
+    --shadow-hard-hover: 2px 2px 0px var(--border-color);
+    --radius-sharp: 0px;
+    --radius-slight: 8px;
+}
+
+* { 
+    box-sizing: border-box; 
+}
+
+body {
+    background-color: var(--bg-main);
+    background-image: radial-gradient(#000000 1px, transparent 1px);
+    background-size: 20px 20px;
+    margin: 0;
+    font-family: 'Kanit', 'Outfit', sans-serif;
+    color: var(--text-main);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Container */
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 20px;
+}
+
+/* Page Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    background: var(--bg-main);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    padding: 20px;
+    transform: rotate(-1deg);
+}
+.page-header h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 500;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--text-main);
+    letter-spacing: -1px;
+}
+.page-header p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 5px 0 0 0;
+    background: var(--primary);
+    color: #fff;
+    display: inline-block;
+    padding: 5px 15px;
+    border: 2px solid var(--border-color);
+    transform: rotate(2deg);
+}
+
+/* Bento Grid */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+/* Premium Card -> Brutal Card */
+.bento-card {
+    background: var(--bg-panel);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    padding: 30px;
+    text-decoration: none;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.1s ease-out;
+    position: relative;
+    z-index: 1;
+}
+
+.bento-card:hover {
+    transform: translate(4px, 4px);
+    box-shadow: var(--shadow-hard-hover);
+    background: var(--secondary);
+}
+
+.bento-card:nth-child(even):hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Icon Wrapper */
+.bento-card .icon-wrapper {
+    width: 70px;
+    height: 70px;
+    background: var(--bg-main);
+    border: var(--border-thick);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--text-main);
+    margin-bottom: 25px;
+    box-shadow: 4px 4px 0px var(--border-color);
+}
+
+.bento-card h3 {
+    font-size: 1.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+}
+
+.bento-card p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Background Huge Icon */
+.bento-card .bg-icon {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    font-size: 10rem;
+    opacity: 0.1;
+    z-index: -1;
+}
+
+/* Admin Button */
+.admin-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--primary);
+    color: #fff;
+    padding: 16px 28px;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    transition: all 0.1s;
+}
+.admin-fab:hover {
+    transform: translate(4px, 4px);
+    box-shadow: var(--shadow-hard-hover);
+    background: var(--secondary);
+    color: #000;
+}
+
+/* --- Admin Panel Brutal System --- */
+.admin-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.admin-layout.single-col {
+    grid-template-columns: 1fr;
+    max-width: 800px;
+}
+
+.bento-panel {
+    background: var(--bg-main);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    transition: all 0.1s;
+}
+.bento-panel.wide {
+    grid-column: 1 / -1;
+}
+.bento-panel h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--secondary);
+    padding: 10px 15px;
+    border: var(--border-thick);
+    box-shadow: 4px 4px 0px var(--border-color);
+}
+.bento-panel h3 i {
+    color: var(--text-main);
+}
+
+/* Inputs */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.input-group label {
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.premium-input, .premium-select {
+    width: 100%;
+    background: #fff;
+    border: var(--border-thick);
+    box-shadow: 4px 4px 0px var(--border-color);
+    color: var(--text-main);
+    padding: 14px 18px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.1s;
+}
+.premium-input:focus, .premium-select:focus {
+    outline: none;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--border-color);
+    background: #FFF9C4;
+}
+.bento-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+.bento-row .input-group { flex: 1; }
+
+input[type="color"].premium-color {
+    padding: 0;
+    height: 56px;
+    cursor: pointer;
+}
+input[type="color"].premium-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+input[type="color"].premium-color::-webkit-color-swatch {
+    border: none;
+}
+
+/* Buttons */
+.premium-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    font-family: 'Kanit', sans-serif;
+    font-weight: 500;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.1s;
+    width: 100%;
+    margin-top: 10px;
+}
+.premium-btn:hover {
+    transform: translate(4px, 4px);
+    box-shadow: var(--shadow-hard-hover);
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: #E60000; color: white;}
+
+.btn-secondary { background: var(--secondary); color: black; }
+.btn-secondary:hover { background: #E66A00; color: black; }
+
+.btn-success { background: #00E676; color: black; }
+.btn-success:hover { background: #00C853; }
+
+/* Backward compatibility for old game pages */
+.glass-theme { background: var(--bg-main); }
+.bg-orbs-container { display: none; }
+.fullscreen-btn { 
+    position: fixed; top: 20px; right: 20px; z-index: 1000; 
+}
+.glass-btn {
+    background: var(--bg-main); border: var(--border-thick); box-shadow: var(--shadow-hard);
+    color: var(--text-main); padding: 10px 20px; font-weight: 800; cursor: pointer; transition: 0.1s;
+}
+.glass-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--border-color); background: var(--secondary); }
+.glass-panel { background: var(--bg-panel); border: var(--border-thick); box-shadow: var(--shadow-hard); padding: 20px;}
+
+@media (max-width: 900px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .bento-grid { grid-template-columns: 1fr; }
+}
+
+/* Neo-Brutalism Toast */
+.neo-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #FFEA00;
+    color: #000;
+    border: 4px solid #000;
+    padding: 15px 25px;
+    font-weight: 600;
+    font-size: 1.2rem;
+    box-shadow: 6px 6px 0px #000;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(150%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.neo-toast.show {
+    transform: translateX(0);
+}
+.neo-toast.success { background: #00E676; }
+.neo-toast.error { background: #FF2A2A; color: #fff; }
+.neo-toast i { font-size: 1.5rem; }
+

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตั้งค่าเกมเปิดป้าย - Zifo Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 20px; margin: 0; background: transparent !important; }
+        
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .admin-input-wrapper { display: flex; flex-direction: column; }
+        .input-number { font-weight: 500; background: var(--secondary); display: inline-block; padding: 2px 8px; border: 2px solid #000; border-bottom: none; width: fit-content; }
+        
+        /* Cropper Overrides */
+        .img-container { width: 100%; height: 300px; background: rgba(0,0,0,0.5); border-radius: 12px; overflow: hidden; margin-top: 10px; }
+        img { max-width: 100%; }
+        
+        .zoom-controls { display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 15px; }
+        .btn-zoom { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .btn-zoom:hover { background: var(--primary); transform: scale(1.1); }
+        input[type=range].premium-range { accent-color: var(--primary); cursor: pointer; width: 100%; max-width: 200px; height: 4px; }
+    </style>
+</head>
+<body class="glass-theme">
+    <header class="page-header">
+        <h1>ตั้งค่าเกมเปิดป้าย</h1>
+        <p>จัดการเนื้อหาและภาพแผ่นป้าย</p>
+    </header>
+
+    <div class="admin-layout">
+        <!-- Card 1: Theme -->
+        <div class="bento-panel">
+            <h3><i class="bi bi-palette-fill"></i> ธีมสี & พื้นหลัง</h3>
+            <div class="bento-row">
+                <div class="input-group">
+                    <label>สีที่ 1 (บนซ้าย)</label>
+                    <input type="color" id="bg-color1" class="premium-color premium-input" value="#000000">
+                </div>
+                <div class="input-group">
+                    <label>สีที่ 2 (ล่างขวา)</label>
+                    <input type="color" id="bg-color2" class="premium-color premium-input" value="#222222">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>ระยะห่างระหว่างการ์ด (px)</label>
+                <input type="number" id="grid-gap" class="premium-input" value="15">
+            </div>
+            <button class="premium-btn btn-secondary" onclick="saveTheme(1)"><i class="bi bi-check-circle"></i> บันทึกธีมสี</button>
+        </div>
+
+        <!-- Card 2: Image Upload -->
+        <div class="bento-panel">
+            <h3><i class="bi bi-image-fill"></i> โลโก้หลังการ์ด</h3>
+            
+            <input type="file" id="inputImage" accept="image/*" style="display:none;" onchange="uploadSource(event)">
+            <button class="premium-btn btn-secondary" onclick="document.getElementById('inputImage').click()">
+                <i class="bi bi-folder2-open"></i> อัปโหลดรูปภาพใหม่...
+            </button>
+            <span id="upload-status" style="margin-top:5px; color:var(--text-muted); font-size:0.85rem; text-align:center;"></span>
+
+            <div class="img-container" style="display:none;">
+                <img id="image-to-crop" src="">
+            </div>
+            
+            <div class="zoom-controls" id="zoom-controls" style="display:none;">
+                <button class="btn-zoom" onclick="zoomManual(-0.1)"><i class="bi bi-dash"></i></button>
+                <input type="range" id="zoom-slider" class="premium-range" min="0.01" max="2" step="0.01" value="0.5" oninput="zoomSlider(this.value)">
+                <button class="btn-zoom" onclick="zoomManual(0.1)"><i class="bi bi-plus"></i></button>
+            </div>
+
+            <button class="premium-btn btn-success" style="display:none;" id="btn-crop" onclick="cropAndUpload()">
+                <i class="bi bi-crop"></i> บันทึกภาพที่ถูกตัด (Crop)
+            </button>
+        </div>
+
+        <!-- Card 3: Content Data -->
+        <div class="bento-panel wide">
+            <h3><i class="bi bi-grid-3x3-gap-fill"></i> ตั้งค่าคำศัพท์บนแผ่นป้าย</h3>
+            
+            <div class="bento-row" style="margin-bottom: 20px;">
+                <div class="input-group" style="flex: 0 0 150px;">
+                    <label>จำนวนป้าย (1-30)</label>
+                    <input type="number" id="card-count" class="premium-input" value="12" min="1" max="30">
+                </div>
+                <button class="premium-btn btn-secondary" style="flex: 0 0 160px; margin-top: 28px;" onclick="generateFields()">
+                    <i class="bi bi-arrow-clockwise"></i> อัปเดตช่อง
+                </button>
+            </div>
+
+            <div class="admin-grid" id="word-inputs"></div>
+
+            <div class="bento-row" style="margin-top: 30px;">
+                <button class="premium-btn btn-primary" style="flex: 2;" onclick="saveData()">
+                    <i class="bi bi-floppy-fill"></i> บันทึกข้อมูล
+                </button>
+                <button class="premium-btn" style="flex: 1; background: #FF7B00; color: #000; border: 2px solid #000; font-weight: bold;" onclick="triggerReveal()"><i class="bi bi-eye-fill"></i> เฉลย</button>
+                <a href="game1.html" target="_blank" class="premium-btn btn-secondary" style="flex: 1; text-decoration:none;">
+                    <i class="bi bi-rocket-takeoff-fill"></i> เปิดดูเกม
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        // Check Login Status
+        checkAuth();
+
+        // --- 1. ระบบจัดการรูปภาพ (Smart Memory) ---
+        let cropper;
+        const imageElement = document.getElementById('image-to-crop');
+        const imgContainer = document.querySelector('.img-container');
+        const cropBtn = document.getElementById('btn-crop');
+        const zoomControls = document.getElementById('zoom-controls');
+        
+        // แสดงรูปที่ใช้อยู่ปัจจุบัน
+        window.addEventListener('load', () => {
+            database.ref('images/card_cover').once('value').then((snapshot) => {
+                const coverUrl = snapshot.val();
+                if(coverUrl) {
+                    // แสดงรูปปัจจุบัน แต่ถ้าจะเปลี่ยนให้กดปุ่มอัปโหลดใหม่
+                    imageElement.src = coverUrl;
+                    imgContainer.style.display = 'block';
+                }
+            });
+        });
+
+        // เมื่อเลือกไฟล์ใหม่ -> อ่านไฟล์ในเครื่องเพื่อเอาไปครอป
+        function uploadSource(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const url = e.target.result;
+                initCropper(url); 
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ฟังก์ชันเริ่มระบบ Cropper
+        function initCropper(url) {
+            imageElement.src = url;
+            imgContainer.style.display = 'block';
+            cropBtn.style.display = 'inline-block';
+            zoomControls.style.display = 'flex';
+
+            if (cropper) cropper.destroy();
+
+            cropper = new Cropper(imageElement, {
+                aspectRatio: 1,      // บังคับสี่เหลี่ยมจัตุรัส
+                viewMode: 0,         // [สำคัญ] 0 = อิสระ ย่อรูปให้เล็กกว่ากรอบได้ (เห็นขอบดำ)
+                dragMode: 'move',    // ให้ใช้เมาส์ลากรูปได้เลย
+                autoCropArea: 0.8,
+                background: false,   // ไม่ต้องโชว์ตารางหมากรุก (ใช้พื้นดำจาก Container แทน)
+                ready() {
+                    // ตั้งค่า Slider เริ่มต้น
+                    syncSlider();
+                },
+                zoom(e) {
+                    syncSlider();
+                }
+            });
+        }
+
+        // เชื่อม Slider กับ Zoom
+        function syncSlider() {
+            if(cropper) {
+                const ratio = cropper.getImageData().width / cropper.getContainerData().width;
+                // ปรับค่า slider ให้ตรงกับสภาพจริง (คร่าวๆ)
+            }
+        }
+
+        function zoomManual(delta) {
+            if(cropper) cropper.zoom(delta);
+        }
+        
+        function zoomSlider(val) {
+            if(cropper) {
+                // zoomTo จะซูมไปยังอัตราส่วนที่กำหนด
+                cropper.zoomTo(parseFloat(val));
+            }
+        }
+
+        // บันทึกผลลัพธ์ (รูปที่ครอปแล้ว)
+        function cropAndUpload() {
+            if (!cropper) return;
+            
+            // แปลงเป็น Base64 String เล็กๆ (JPEG quality 0.8)
+            const dataUrl = cropper.getCroppedCanvas({ 
+                width: 500, 
+                fillColor: '#000000' 
+            }).toDataURL('image/jpeg', 0.8);
+            
+            // บันทึกลง Realtime Database โดยตรง (ไม่ต้องผ่าน Storage)
+            database.ref('images/card_cover').set(dataUrl).then(() => {
+                alert('อัปโหลดและบันทึกรูปภาพเรียบร้อย!');
+                location.reload();
+            }).catch(err => alert('Save Failed: ' + err.message));
+        }
+
+        // --- 2. ส่วนคำศัพท์ (คงเดิม) ---
+        database.ref('zifo_game/1').once('value').then(snapshot => {
+            const data = snapshot.val() || {words: '[]'};
+            const gameData = JSON.parse(data.words || '[]');
+            renderInputs(gameData);
+        });
+
+        function renderInputs(data) {
+            const countInput = document.getElementById('card-count');
+            countInput.value = data.length > 0 ? data.length : 12;
+            generateFields(data);
+        }
+
+        function generateFields(existingData = null) {
+            const count = parseInt(document.getElementById('card-count').value) || 12;
+            const container = document.getElementById('word-inputs');
+            
+            let currentValues = [];
+            if (existingData) {
+                currentValues = existingData;
+            } else {
+                container.querySelectorAll('.word-input').forEach(inp => currentValues.push(inp.value));
+            }
+
+            container.innerHTML = '';
+            for(let i=0; i<count; i++) {
+                const val = currentValues[i] || "";
+                container.innerHTML += `
+                    <div class="admin-input-wrapper">
+                        <span class="input-number">${i+1}</span>
+                        <input type="text" class="premium-input word-input" value="${val}" placeholder="คำศัพท์...">
+                    </div>
+                `;
+            }
+        }
+
+        function saveData() {
+            let words = [];
+            document.querySelectorAll('.word-input').forEach(inp => words.push(inp.value));
+            database.ref('zifo_game/1/words').set(JSON.stringify(words)).then(() => {
+                alert('บันทึกเรียบร้อย!');
+            });
+        }
+
+        function triggerReveal() {
+            database.ref('game_commands/game1').set({
+                action: 'reveal_all',
+                timestamp: Date.now()
+            }).then(() => {
+                alert('ส่งคำสั่งเฉลยไปที่หน้าจอเกมแล้ว!');
+            });
+        }
+
+        // --- 3. Theme Logic ---
+        function loadTheme(id) {
+            database.ref(`game_theme/${id}`).once('value').then(snapshot => {
+                const data = snapshot.val();
+                if(data) {
+                    if(data.color1) document.getElementById('bg-color1').value = data.color1;
+                    if(data.color2) document.getElementById('bg-color2').value = data.color2;
+                    if(data.grid_gap) document.getElementById('grid-gap').value = data.grid_gap;
+                }
+            });
+        }
+        function saveTheme(id) {
+            const c1=document.getElementById('bg-color1').value;
+            const c2=document.getElementById('bg-color2').value;
+            const gap=document.getElementById('grid-gap').value;
+            database.ref(`game_theme/${id}`).update({
+                color1: c1,
+                color2: c2,
+                direction: '135deg',
+                grid_gap: gap
+            }).then(()=>alert('บันทึกธีมเรียบร้อย'));
+        }
+        loadTheme(1);
+    </script>
+    <script src="toast.js"></script>
+</body>
+</html>

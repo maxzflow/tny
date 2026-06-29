@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Generator V9 (Premium Glass 3D Studio)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700;900&family=Sarabun:wght@400;700;800&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* --- Neo-Brutalist Studio Layout --- */
+        body { 
+            display: flex; height: 100vh; margin: 0; overflow: hidden; 
+            background: var(--bg-main);
+        }
+        
+        /* Rigid Sidebar */
+        .sidebar { 
+            width: 450px; 
+            background: #fff; 
+            border-right: var(--border-thick); 
+            display: flex; flex-direction: column; height: 100vh; 
+            z-index: 20; 
+            box-shadow: var(--shadow-hard); 
+        }
+        .sidebar-header { 
+            padding: 24px; 
+            background: var(--bg-panel);
+            border-bottom: var(--border-thick); 
+        }
+        .sidebar-content { 
+            padding: 24px; overflow-y: auto; flex: 1; 
+            display: flex; flex-direction: column; gap: 20px; 
+            background: #fff;
+        }
+        
+        /* Scrollbar */
+        .sidebar-content::-webkit-scrollbar { width: 10px; }
+        .sidebar-content::-webkit-scrollbar-track { background: var(--bg-panel); border-left: 2px solid #000; }
+        .sidebar-content::-webkit-scrollbar-thumb { background: #000; }
+        
+        /* 3D Web Experience - Brutalist Boxes */
+        .box-wrapper { position: relative; display: flex; justify-content: center; align-items: center; perspective: 1000px; }
+        
+        /* Realistic Hard Shadow */
+        .box-layer-shadow { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
+            border-radius: inherit; 
+        }
+        
+        /* 3D Base (Extrusion) */
+        .box-layer-base { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; 
+            border-radius: inherit; 
+        }
+        
+        /* Face Layer */
+        .box-layer-face { 
+            position: relative; width: 100%; height: 100%; z-index: 3; 
+            display: flex; justify-content: center; align-items: center; 
+            border-radius: inherit; box-sizing: border-box; 
+        }
+        
+        .box-layer-face span { display: inline-block; line-height: 1; position: relative; z-index: 4; font-weight: 500;}
+        .box-wrapper.hidden .box-layer-face span { visibility: hidden; }
+
+        /* --- Canvas Studio Area --- */
+        .preview-container { 
+            flex: 1; 
+            background-color: var(--bg-panel);
+            background-image: radial-gradient(#000 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex; justify-content: center; align-items: center; 
+            overflow: auto; padding: 40px; position: relative; 
+        }
+        
+        #canvas-scaler { 
+            transform-origin: center center; 
+            box-shadow: 10px 10px 0px #000;
+            border: var(--border-thick);
+            border-radius: 0px; overflow: hidden;
+            transition: transform 0.1s cubic-bezier(0.1, 0.7, 0.1, 1);
+        }
+        
+        #ad-canvas {
+            width: 1080px; height: 1080px; 
+            background-color: #fff; background-image: url('uploads/bg_ad_default.png');
+            background-size: cover; background-position: center;
+            position: relative; overflow: hidden;
+        }
+
+        .draggable-layer { position: absolute; width: 100%; display: flex; justify-content: center; align-items: center; cursor: move; border: 4px dashed transparent; transition: 0.1s; }
+        .draggable-layer:hover { border-color: var(--border-color); background: rgba(255,255,255,0.1); }
+
+        #canvas-title { text-align: center; line-height: 1.2; white-space: nowrap; paint-order: stroke fill; font-weight: 500;}
+        #canvas-boxes { display: flex; justify-content: center; flex-wrap: wrap; }
+
+        /* Char Toggle (Neo-Brutalism) */
+        .char-select-area { display: flex; flex-wrap: wrap; gap: 8px; background: #fff; padding: 12px; border-radius: 0; min-height: 40px; border: var(--border-thick); box-shadow: 4px 4px 0px #000; margin-top: 10px;}
+        .char-toggle { min-width: 35px; height: 35px; padding: 0 8px; background: #00E676; color: #000; border: 2px solid #000; display: flex; justify-content: center; align-items: center; cursor: pointer; user-select: none; font-size: 1.1rem; font-weight: 500; transition: all 0.1s; box-shadow: 2px 2px 0px #000; }
+        .char-toggle:hover { transform: translate(2px, 2px); box-shadow: 0px 0px 0px #000; }
+        .char-toggle.hidden { background: var(--primary); color: #fff; opacity: 1; text-decoration: line-through; }
+
+        /* Helpers */
+        .row-2-col { display: flex; gap: 12px; align-items: center; }
+        .col { flex: 1; }
+        label { display: block; font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; margin-top: 10px; }
+        hr { border: 0; border-top: 2px solid #000; margin: 20px 0; }
+        
+        .collapsible-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .collapsible-header i.bi-chevron-down { transition: transform 0.1s; }
+        .bento-panel.collapsed .settings-content { display: none; }
+        .bento-panel.collapsed .collapsible-header i.bi-chevron-down { transform: rotate(-90deg); }
+        .settings-content { animation: fadeIn 0.1s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Range Slider Styling */
+        input[type="range"].premium-range {
+            -webkit-appearance: none; width: 100%; height: 10px; background: #fff; border: 2px solid #000; outline: none; box-shadow: 2px 2px 0px #000;
+        }
+        input[type="range"].premium-range::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border: 2px solid #000; background: var(--secondary); cursor: pointer; transition: 0.1s;
+        }
+        input[type="range"].premium-range::-webkit-slider-thumb:hover { background: var(--primary); }
+        
+        /* Value Badge */
+        .val-badge { float: right; background: var(--primary); padding: 2px 8px; border: 2px solid #000; font-size: 0.85rem; color: #fff; font-weight: 500; }
+    </style>
+</head>
+<body class="glass-theme">
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 style="font-weight:900; color:#000; margin:0 0 15px 0; font-size: 1.5rem; display:flex; align-items:center; gap:10px; text-transform:uppercase;">
+                <div style="background:var(--primary); width:40px; height:40px; display:flex; justify-content:center; align-items:center; border:2px solid #000; box-shadow:2px 2px 0px #000; color:#fff;">
+                    <i class="bi bi-magic"></i>
+                </div>
+                Ad Studio V9
+            </h2>
+            
+            <label>เลือก Preset (จาก Server):</label>
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <select id="presetList" class="premium-select" style="flex:1; padding: 10px 15px;" onchange="applyPreset()">
+                    <option value="">-- โหลด Preset --</option>
+                </select>
+                <button class="premium-btn btn-secondary" style="width:50px; margin:0; padding:0;" onclick="deletePreset()" title="ลบ"><i class="bi bi-trash"></i></button>
+            </div>
+            <button class="premium-btn" style="background:#fff; width:100%; border: 2px dashed #000; padding: 10px; color:#000;" onclick="saveNewPreset()">
+                <i class="bi bi-cloud-upload"></i> บันทึกเป็น Preset ใหม่
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            
+            <!-- Canvas Settings -->
+            <div class="bento-panel collapsed">
+                <div class="collapsible-header" onclick="toggleGroup(this.parentElement)">
+                    <h3 style="margin:0; font-size: 1.2rem;"><i class="bi bi-aspect-ratio"></i> ตั้งค่าหน้ากระดาษ</h3>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="settings-content">
+                    <div class="row-2-col" style="margin-top: 15px;">
+                        <div class="col">
+                            <label style="margin-top:0;">ขนาด:</label>
+                            <select id="aspectRatio" class="save-target premium-select" onchange="changeAspectRatio()">
+                                <option value="1:1">1:1 (Square)</option>
+                                <option value="4:5">4:5 (Portrait)</option>
+                                <option value="16:9">16:9 (Landscape)</option>
+                                <option value="9:16">9:16 (Story)</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label style="margin-top:0;">ภาพพื้นหลัง:</label>
+                            <button class="premium-btn btn-secondary" style="margin:0; padding: 12px;" onclick="document.getElementById('bgInput').click()">
+                                <i class="bi bi-image"></i> เลือกรูป
+                            </button>
+                            <input type="file" id="bgInput" accept="image/*" style="display:none;" onchange="uploadBg()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Title Settings -->
+            <div class="bento-panel">
+                <div class="collapsible-header" onclick="toggleGroup(this.parentElement)">
+                    <h3 style="margin:0; font-size: 1.2rem;"><i class="bi bi-type-h1"></i> ปรับแต่งหัวข้อ</h3>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="settings-content">
+                    <label style="color:var(--primary);">ข้อความ (โจทย์):</label>
+                    <input type="text" id="titleTextQ" class="save-target premium-input" value="เมนูนี้ชื่อว่า" oninput="render()">
+                    
+                    <label style="color:var(--secondary);">ข้อความ (เฉลย):</label>
+                    <input type="text" id="titleTextA" class="save-target premium-input" value="เฉลย" oninput="render()">
+                    
+                    <hr>
+
+                    <label>รูปแบบฟอนต์:</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="titleFont" class="save-target premium-select" onchange="render()" style="flex:1;">
+                            <option value="'Kanit', sans-serif">Kanit</option>
+                            <option value="'Sarabun', sans-serif">Sarabun</option>
+                        </select>
+                        <button class="premium-btn btn-secondary" style="width:45px; margin:0; padding:0;" onclick="document.getElementById('fontInput').click()" title="อัปโหลดฟอนต์"><i class="bi bi-upload"></i></button>
+                        <input type="file" id="fontInput" accept=".ttf,.otf" style="display:none;" onchange="uploadFont()">
+                    </div>
+
+                    <div class="row-2-col">
+                        <div class="col"><label>สีตัวอักษร:</label><input type="color" id="titleColor" class="save-target premium-color" value="#ffffff" oninput="render()"></div>
+                        <div class="col">
+                            <label>หนาขอบ: <span class="val-badge" id="v-tsw">8</span></label>
+                            <input type="range" id="tStrokeW" class="save-target premium-range" min="0" max="20" value="8" oninput="render(); document.getElementById('v-tsw').innerText=this.value;">
+                        </div>
+                    </div>
+                    <label>สีขอบ:</label>
+                    <input type="color" id="tStrokeC" class="save-target premium-color" value="#000000" oninput="render()">
+                    
+                    <hr>
+                    <label style="color:var(--primary); font-size:1rem;">Shadow & Glow</label>
+                    
+                    <div class="row-2-col">
+                        <div class="col">
+                             <label>แกน X: <span class="val-badge" id="v-tsx">0</span></label>
+                             <input type="range" id="tShadX" class="save-target premium-range" min="-50" max="50" value="0" oninput="render(); document.getElementById('v-tsx').innerText=this.value;">
+                        </div>
+                        <div class="col">
+                             <label>แกน Y: <span class="val-badge" id="v-tsy">5</span></label>
+                             <input type="range" id="tShadY" class="save-target premium-range" min="-50" max="50" value="5" oninput="render(); document.getElementById('v-tsy').innerText=this.value;">
+                        </div>
+                    </div>
+                    
+                    <label>ความเบลอ (Blur): <span class="val-badge" id="v-tsb">0</span></label>
+                    <input type="range" id="tShadB" class="save-target premium-range" min="0" max="100" value="0" oninput="render(); document.getElementById('v-tsb').innerText=this.value;">
+
+                    <label>ความหนาเงา (Spread): <span class="val-badge" id="v-tss">0</span></label>
+                    <input type="range" id="tShadS" class="save-target premium-range" min="0" max="20" value="0" oninput="render(); document.getElementById('v-tss').innerText=this.value;">
+
+                    <div class="row-2-col">
+                         <div class="col"><label>สีเงา:</label><input type="color" id="tShadC" class="save-target premium-color" value="#000000" oninput="render()"></div>
+                         <div class="col">
+                             <label>ความเข้ม (Opacity): <span class="val-badge" id="v-tsa">1.0</span></label>
+                             <input type="range" id="tShadA" class="save-target premium-range" min="0" max="1" step="0.1" value="1" oninput="render(); document.getElementById('v-tsa').innerText=this.value;">
+                         </div>
+                    </div>
+
+                    <hr>
+                    <label style="color:var(--primary); font-size:1rem;">Position & Scale</label>
+                    <div class="row-2-col">
+                        <div class="col">
+                            <label>ตำแหน่ง X:</label>
+                            <input type="range" id="titleX" class="save-target premium-range" min="-500" max="500" value="0" oninput="render()">
+                        </div>
+                        <div class="col">
+                            <label>ตำแหน่ง Y:</label>
+                            <input type="range" id="titleY" class="save-target premium-range" min="0" max="1500" value="250" oninput="render()">
+                        </div>
+                    </div>
+                    <label>ขนาดฟอนต์: <span class="val-badge" id="v-ts">120px</span></label>
+                    <input type="range" id="titleSize" class="save-target premium-range" min="20" max="300" value="120" oninput="render(); document.getElementById('v-ts').innerText=this.value+'px';">
+                </div>
+            </div>
+
+            <!-- Box Settings -->
+            <div class="bento-panel">
+                <div class="collapsible-header" onclick="toggleGroup(this.parentElement)">
+                    <h3 style="margin:0; font-size: 1.2rem;"><i class="bi bi-box-seam"></i> 3D Boxes (กล่องคำตอบ)</h3>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="settings-content">
+                    <label style="color:var(--secondary);">คำเฉลย (ซ่อน/แสดงได้):</label>
+                    <input type="text" id="answerText" class="save-target premium-input" value="ข้าวซอยไก่" oninput="updateCharSelector()">
+                    <div class="char-select-area" id="charSelector"></div>
+                    
+                    <hr>
+                    
+                    <div class="row-2-col">
+                        <div class="col"><label>สีพื้นกล่อง:</label><input type="color" id="boxBg" class="save-target premium-color" value="#1a1a1a" oninput="render()"></div>
+                        <div class="col"><label>สีตัวอักษร:</label><input type="color" id="boxColor" class="save-target premium-color" value="#ffffff" oninput="render()"></div>
+                    </div>
+
+                    <div class="row-2-col">
+                        <div class="col">
+                            <label>กว้าง (W): <span class="val-badge" id="v-bw">110</span></label>
+                            <input type="range" id="boxW" class="save-target premium-range" min="50" max="300" value="110" oninput="render(); document.getElementById('v-bw').innerText=this.value;">
+                        </div>
+                        <div class="col">
+                            <label>สูง (H): <span class="val-badge" id="v-bh">140</span></label>
+                            <input type="range" id="boxH" class="save-target premium-range" min="50" max="300" value="140" oninput="render(); document.getElementById('v-bh').innerText=this.value;">
+                        </div>
+                    </div>
+
+                    <hr>
+                    
+                    <label style="color:var(--primary); font-size:1rem;"><i class="bi bi-boxes"></i> 3D Base System</label>
+                    <div class="row-2-col">
+                        <div class="col"><label>สีฐาน 3D:</label><input type="color" id="boxBaseColor" class="save-target premium-color" value="#10B981" oninput="render()"></div>
+                        <div class="col">
+                            <label>ความหนา 3D: <span class="val-badge" id="v-bbh">15</span></label>
+                            <input type="range" id="boxBaseH" class="save-target premium-range" min="0" max="50" value="15" oninput="render(); document.getElementById('v-bbh').innerText=this.value;">
+                        </div>
+                    </div>
+
+                    <div class="row-2-col">
+                        <div class="col"><label>สีขอบหน้า:</label><input type="color" id="boxBorderC" class="save-target premium-color" value="#ffffff" oninput="render()"></div>
+                        <div class="col">
+                            <label>ความหนาขอบ:</label>
+                            <input type="range" id="boxBorderW" class="save-target premium-range" min="0" max="10" value="0" oninput="render()">
+                        </div>
+                    </div>
+
+                    <label>ความโค้งมน (Radius): <span class="val-badge" id="v-br">12</span></label>
+                    <input type="range" id="boxRadius" class="save-target premium-range" min="0" max="50" value="12" oninput="render(); document.getElementById('v-br').innerText=this.value;">
+
+                    <label style="margin-top:15px;">เงาตกกระทบ (Cast Shadow):</label>
+                    <div class="row-2-col">
+                        <div class="col">
+                            <label style="margin-top:5px; font-weight:normal;">ระยะ (Y)</label>
+                            <input type="range" id="boxShadY" class="save-target premium-range" min="0" max="100" value="15" oninput="render()">
+                        </div>
+                        <div class="col">
+                            <label style="margin-top:5px; font-weight:normal;">เบลอ (Blur)</label>
+                            <input type="range" id="boxShadB" class="save-target premium-range" min="0" max="100" value="20" oninput="render()">
+                        </div>
+                    </div>
+
+                    <hr>
+                    
+                    <label>ขนาดฟอนต์ในกล่อง: <span class="val-badge" id="v-bfs">90</span></label>
+                    <input type="range" id="boxFontSize" class="save-target premium-range" min="20" max="200" value="90" oninput="render(); document.getElementById('v-bfs').innerText=this.value;">
+
+                    <label>ขยับสระ ขึ้น/ลง (Offset): <span class="val-badge" id="v-bfo">0</span></label>
+                    <input type="range" id="boxFontOffset" class="save-target premium-range" min="-50" max="50" value="0" oninput="render(); document.getElementById('v-bfo').innerText=this.value;">
+
+                    <label>ตำแหน่งแกน Y (ทั้งแถว): <span class="val-badge" id="v-by">500</span></label>
+                    <input type="range" id="boxesY" class="save-target premium-range" min="0" max="1500" value="500" oninput="render(); document.getElementById('v-by').innerText=this.value;">
+                    
+                    <label>ระยะห่างระหว่างกล่อง (Gap): <span class="val-badge" id="v-bgap">10</span></label>
+                    <input type="range" id="boxGap" class="save-target premium-range" min="0" max="50" value="10" oninput="render(); document.getElementById('v-bgap').innerText=this.value;">
+                </div>
+            </div>
+
+            <div class="bento-panel" style="background: var(--bg-main);">
+                <h3 style="margin:0 0 15px 0; font-size: 1.2rem; color:var(--primary);"><i class="bi bi-download"></i> Export</h3>
+                <button class="premium-btn btn-secondary" onclick="downloadImage('question')"><i class="bi bi-question-circle"></i> โหลดรูป "โจทย์" (ซ่อนคำ)</button>
+                <button class="premium-btn btn-primary" onclick="downloadImage('answer')"><i class="bi bi-check-circle-fill"></i> โหลดรูป "เฉลย" (แสดงคำ)</button>
+            </div>
+            <br>
+        </div>
+    </div>
+
+    <!-- Canvas Studio -->
+    <div class="preview-container">
+        <div id="canvas-scaler">
+            <div id="ad-canvas">
+                <div id="layer-title" class="draggable-layer"><div id="canvas-title">HEADER</div></div>
+                <div id="layer-boxes" class="draggable-layer"><div id="canvas-boxes"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hiddenStatus = [];
+        let serverPresets = []; 
+
+        window.onload = () => {
+            fetchServerFonts();   
+            fetchServerPresets(); 
+            setTimeout(() => {
+                updateCharSelector();
+                changeAspectRatio();
+                render();
+            }, 500);
+            
+            document.querySelectorAll('.save-target').forEach(el => {
+                el.addEventListener('input', () => { render(); });
+            });
+            window.addEventListener('resize', resizePreview);
+        };
+
+        function toggleGroup(panel) { panel.classList.toggle('collapsed'); }
+
+        function render(mode = 'preview') {
+            const val = (id) => {
+                const el = document.getElementById(id);
+                return el.value !== "" ? el.value : el.getAttribute('value');
+            };
+            
+            const titleEl = document.getElementById('canvas-title');
+            const layerTitle = document.getElementById('layer-title');
+            
+            if (mode === 'answer') titleEl.innerText = val('titleTextA');
+            else if (mode === 'question') titleEl.innerText = val('titleTextQ');
+            else titleEl.innerText = val('titleTextQ');
+
+            titleEl.style.fontFamily = val('titleFont');
+            titleEl.style.color = val('titleColor');
+            titleEl.style.fontSize = val('titleSize') + 'px';
+            titleEl.style.webkitTextStroke = `${val('tStrokeW')}px ${val('tStrokeC')}`;
+            
+            // --- Shadow Logic ---
+            const hex = val('tShadC');
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            const shadowColor = `rgba(${r},${g},${b},${val('tShadA')})`;
+            const sX = val('tShadX');
+            const sY = val('tShadY');
+            const sBlur = val('tShadB');
+            const sSpread = parseInt(val('tShadS')); 
+
+            let shadowList = [];
+            shadowList.push(`${sX}px ${sY}px ${sBlur}px ${shadowColor}`);
+            if (sSpread > 0) {
+                for(let i=1; i<=sSpread; i++) {
+                     shadowList.push(`${sX}px ${sY}px ${parseInt(sBlur) + (i*2)}px ${shadowColor}`);
+                }
+            }
+            titleEl.style.textShadow = shadowList.join(',');
+
+            layerTitle.style.top = val('titleY') + 'px';
+            layerTitle.style.transform = `translateX(${val('titleX')}px)`;
+
+            // --- Boxes Logic (3D Web Experience Style) ---
+            const boxesContainer = document.getElementById('canvas-boxes');
+            const layerBoxes = document.getElementById('layer-boxes');
+            layerBoxes.style.top = val('boxesY') + 'px';
+            boxesContainer.style.gap = val('boxGap') + 'px';
+            
+            const bW = val('boxW'); const bH = val('boxH');
+            const bBg = val('boxBg'); const bColor = val('boxColor');
+            const bFS = val('boxFontSize'); const bOffset = val('boxFontOffset');
+            const bBaseH = parseInt(val('boxBaseH')); const bBaseC = val('boxBaseColor');
+            const bBorderW = parseInt(val('boxBorderW')); const bBorderC = val('boxBorderC');
+            const bRadius = val('boxRadius');
+            const bShadY = parseInt(val('boxShadY')); const bShadB = parseInt(val('boxShadB'));
+
+            boxesContainer.innerHTML = '';
+            const text = val('answerText');
+            let chars = text.split('');
+            if (window.Intl && Intl.Segmenter) {
+                const segmenter = new Intl.Segmenter('th', { granularity: 'grapheme' });
+                chars = Array.from(segmenter.segment(text)).map(s => s.segment);
+            }
+
+            chars.forEach((char, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'box-wrapper';
+                wrapper.style.width = bW + 'px';
+                wrapper.style.height = bH + 'px'; 
+                wrapper.style.borderRadius = `${bRadius}px`;
+
+                const shadowDiv = document.createElement('div');
+                shadowDiv.className = 'box-layer-shadow';
+                shadowDiv.style.top = `${bBaseH + bShadY}px`;
+                // Neo-Brutalism hard shadow, no blur unless specified, but let's use bShadB as an option just in case, though usually 0.
+                shadowDiv.style.boxShadow = `0 ${bShadY}px 0px rgba(0,0,0,1)`;
+                shadowDiv.style.borderRadius = `${bRadius}px`;
+
+                const baseDiv = document.createElement('div');
+                baseDiv.className = 'box-layer-base';
+                baseDiv.style.backgroundColor = bBaseC;
+                baseDiv.style.top = `${bBaseH}px`;
+                baseDiv.style.border = `${bBorderW}px solid ${bBorderC}`;
+                baseDiv.style.borderRadius = `${bRadius}px`;
+
+                const faceDiv = document.createElement('div');
+                faceDiv.className = 'box-layer-face';
+                faceDiv.style.backgroundColor = bBg;
+                faceDiv.style.color = bColor;
+                faceDiv.style.fontSize = bFS + 'px';
+                faceDiv.style.border = `${bBorderW}px solid ${bBorderC}`;
+                faceDiv.style.borderRadius = `${bRadius}px`;
+
+                const span = document.createElement('span');
+                span.innerText = char;
+                span.style.top = bOffset + 'px';
+                faceDiv.appendChild(span);
+
+                if (mode === 'question' && hiddenStatus[index]) {
+                    wrapper.classList.add('hidden');
+                }
+                else if (mode === 'preview' && hiddenStatus[index]) {
+                    faceDiv.style.opacity = '0.3';
+                }
+
+                wrapper.appendChild(shadowDiv); wrapper.appendChild(baseDiv); wrapper.appendChild(faceDiv);
+                boxesContainer.appendChild(wrapper);
+            });
+        }
+
+        // --- HELPERS ---
+        function changeAspectRatio() {
+            const ratio = document.getElementById('aspectRatio').value;
+            const canvas = document.getElementById('ad-canvas');
+            let w = 1080, h = 1080;
+            if(ratio === '4:5') { w = 1080; h = 1350; }
+            else if(ratio === '16:9') { w = 1920; h = 1080; }
+            else if(ratio === '9:16') { w = 1080; h = 1920; }
+            canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+            resizePreview();
+        }
+
+        function resizePreview() {
+            const container = document.querySelector('.preview-container');
+            const scaler = document.getElementById('canvas-scaler');
+            const canvas = document.getElementById('ad-canvas');
+            const margin = 80;
+            const scale = Math.min((container.clientWidth - margin) / parseInt(canvas.style.width), (container.clientHeight - margin) / parseInt(canvas.style.height));
+            scaler.style.transform = `scale(${scale})`;
+        }
+
+        function updateCharSelector() {
+            const text = document.getElementById('answerText').value;
+            const container = document.getElementById('charSelector');
+            container.innerHTML = '';
+            if (hiddenStatus.length !== text.length) hiddenStatus = new Array(text.length).fill(false);
+            
+            let chars = text.split('');
+            if (window.Intl && Intl.Segmenter) {
+                const segmenter = new Intl.Segmenter('th', { granularity: 'grapheme' });
+                chars = Array.from(segmenter.segment(text)).map(s => s.segment);
+            }
+            chars.forEach((char, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'char-toggle ' + (hiddenStatus[index] ? 'hidden' : '');
+                btn.innerText = char;
+                btn.onclick = () => { hiddenStatus[index] = !hiddenStatus[index]; updateCharSelector(); render(); };
+                container.appendChild(btn);
+            });
+            render();
+        }
+
+        function uploadBg() {
+            const fileInput = document.getElementById('bgInput');
+            if(fileInput.files.length === 0) return;
+            const formData = new FormData();
+            formData.append("bg_image", fileInput.files[0]);
+            fetch('api_ad_upload.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => { 
+                if(data.status === 'success') document.getElementById('ad-canvas').style.backgroundImage = `url('${data.url}')`;
+            });
+        }
+
+        function downloadImage(type) {
+            render(type);
+            const canvasElement = document.getElementById('ad-canvas');
+            const scaler = document.getElementById('canvas-scaler');
+            const originalTransform = scaler.style.transform;
+            scaler.style.transform = 'none';
+            
+            scaler.style.opacity = '0.5';
+            
+            html2canvas(canvasElement, { scale: 2, useCORS: true, backgroundColor: null, allowTaint: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Ad_${type}_${Date.now()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                scaler.style.transform = originalTransform;
+                scaler.style.opacity = '1';
+                render('preview');
+            });
+        }
+
+        // --- SERVER API CALLS ---
+        
+        function uploadFont() {
+            const fileInput = document.getElementById('fontInput');
+            if(fileInput.files.length === 0) return;
+            const formData = new FormData();
+            formData.append("action", "upload_font");
+            formData.append("font_file", fileInput.files[0]);
+            
+            fetch('api_ad_manager.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert("Upload Font Success");
+                    fetchServerFonts(); 
+                } else alert("Upload Failed");
+            });
+        }
+
+        function fetchServerFonts() {
+            const formData = new FormData(); formData.append("action", "load_fonts");
+            fetch('api_ad_manager.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(fonts => {
+                const select = document.getElementById('titleFont');
+                while (select.options.length > 2) { select.remove(2); }
+                
+                fonts.forEach(font => {
+                    const style = document.createElement('style');
+                    style.innerHTML = `@font-face { font-family: "${font.name}"; src: url("${font.file_path}"); }`;
+                    document.head.appendChild(style);
+                    
+                    const opt = document.createElement('option');
+                    opt.value = font.name;
+                    opt.innerText = font.name;
+                    select.appendChild(opt);
+                });
+                setTimeout(render, 100);
+            });
+        }
+
+        function saveNewPreset() {
+            const name = prompt("ตั้งชื่อ Preset (บนเว็บ):");
+            if(!name) return;
+
+            const settings = {};
+            document.querySelectorAll('.save-target').forEach(el => settings[el.id] = el.value);
+            settings['hiddenStatus'] = hiddenStatus;
+            const bgStyle = document.getElementById('ad-canvas').style.backgroundImage;
+            if(bgStyle) settings['bgStyle'] = bgStyle;
+
+            const formData = new FormData();
+            formData.append("action", "save_preset");
+            formData.append("name", name);
+            formData.append("data", JSON.stringify(settings));
+
+            fetch('api_ad_manager.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert("Saved!");
+                    fetchServerPresets();
+                }
+            });
+        }
+
+        function fetchServerPresets() {
+            const formData = new FormData(); formData.append("action", "load_presets");
+            fetch('api_ad_manager.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                serverPresets = data;
+                const select = document.getElementById('presetList');
+                select.innerHTML = '<option value="">-- โหลด Preset --</option>';
+                data.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.innerText = p.name;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function applyPreset() {
+            const id = document.getElementById('presetList').value;
+            if(!id) return;
+            const preset = serverPresets.find(p => p.id == id);
+            if(preset) {
+                const data = JSON.parse(preset.data);
+                for (const key in data) {
+                    if (key === 'hiddenStatus') hiddenStatus = data[key];
+                    else if (key === 'bgStyle') document.getElementById('ad-canvas').style.backgroundImage = data[key];
+                    else {
+                        const el = document.getElementById(key);
+                        if(el) el.value = data[key];
+                    }
+                }
+                updateCharSelector();
+                changeAspectRatio();
+                render();
+            }
+        }
+
+        function deletePreset() {
+            const id = document.getElementById('presetList').value;
+            if(!id) return;
+            if(confirm("ต้องการลบ Preset นี้จาก Server?")) {
+                const formData = new FormData();
+                formData.append("action", "delete_preset");
+                formData.append("id", id);
+                fetch('api_ad_manager.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'success') fetchServerPresets();
+                });
+            }
+        }
+    </script>
+</body>
+</html>

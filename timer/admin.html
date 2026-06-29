@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ห้องบัญชาการแมว (Admin)</title>
+    <style>
+        body { background: #1a1a2e; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .panel { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; }
+        button { font-size: 1.2rem; padding: 10px 20px; margin: 10px; cursor: pointer; border: none; border-radius: 5px; }
+        .btn-start { background: #e94560; color: white; }
+        .btn-stop { background: #0f3460; color: white; }
+        .btn-msg { background: #fff; color: #0f3460; }
+        input { padding: 10px; font-size: 1rem; border-radius: 5px; border: none; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <h1>🎛️ ห้องบัญชาการแมว</h1>
+    <p>Connected to: Asia-Southeast1</p>
+    
+    <div class="panel">
+        <h3>1. ตั้งเวลา (นาที)</h3>
+        <input type="number" id="minutes" value="5" style="width: 60px;">
+        <br>
+        <button class="btn-start" onclick="startTimer()">🚀 ปล่อยแมว</button>
+        <button class="btn-stop" onclick="stopTimer()">🛑 หยุดแมว</button>
+
+        <hr style="border-color: #444;">
+
+        <h3>2. ส่งนกพิราบ</h3>
+        <input type="text" id="msgInput" placeholder="ข้อความ..." style="width: 70%;">
+        <button class="btn-msg" onclick="sendMessage()">🕊️ ส่ง</button>
+        <button class="btn-msg" onclick="clearMessage()">❌ ลบ</button>
+        
+        <hr style="border-color: #444;">
+        
+        <h3>3. เปลี่ยนสกิน</h3>
+        <button onclick="changeSkin('original')">🐱 ปกติ</button>
+        <button onclick="changeSkin('zombie')">🧟 ซอมบี้</button>
+        <button onclick="changeSkin('space')">🚀 อวกาศ</button>
+    </div>
+
+    <script>
+        // --- Config ที่ถูกต้อง (แก้ลิงก์ databaseURL แล้ว) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVABCnzhVs8G6s7R7BS-Az5EN6HZsYp4Q",
+            authDomain: "timer-38e22.firebaseapp.com",
+            projectId: "timer-38e22",
+            storageBucket: "timer-38e22.firebasestorage.app",
+            messagingSenderId: "188072585975",
+            appId: "1:188072585975:web:1c81b3c0e66035a52c41f2",
+            measurementId: "G-X62TZ7CY90",
+            // ลิงก์ที่ถูกต้องสำหรับโซนเอเชียครับ
+            databaseURL: "https://timer-38e22-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        // ----------------------------------------------------
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function startTimer() {
+            const mins = document.getElementById('minutes').value;
+            const endTime = Date.now() + (mins * 60 * 1000);
+            
+            db.ref('timer').set({
+                status: "RUNNING",
+                endTime: endTime,
+                duration: mins * 60 * 1000,
+                serverTimeOffset: 0
+            }).then(() => {
+                alert("ส่งคำสั่งสำเร็จ! แมววิ่งแล้ว 🐱");
+            }).catch((error) => {
+                alert("Error: " + error.message);
+            });
+        }
+
+        function stopTimer() {
+            db.ref('timer/status').set("STOPPED");
+        }
+
+        function sendMessage() {
+            const msg = document.getElementById('msgInput').value;
+            db.ref('timer/message').set({ text: msg, show: true });
+        }
+
+        function clearMessage() {
+            db.ref('timer/message').set({ show: false });
+        }
+
+        function changeSkin(skinName) {
+            db.ref('timer/skin').set(skinName);
+        }
+    </script>
+</body>
+</html>

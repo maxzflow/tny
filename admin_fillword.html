@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตั้งค่าเกมเติมคำ - Zifo Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 20px; margin: 0; background: transparent !important; }
+        
+        .char-selector-area { margin-top: 5px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+        .char-btn { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 1.4rem; min-width: 45px; text-align: center; user-select: none; transition: 0.2s; line-height: 1.2; font-weight: 600;}
+        .char-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .char-btn.is-hidden { background: rgba(255, 94, 58, 0.2); color: var(--primary); border-color: var(--primary); box-shadow: 0 4px 10px rgba(255,94,58,0.2); }
+    </style>
+</head>
+<body class="glass-theme">
+    <header class="page-header">
+        <h1>ตั้งค่าเกมเติมคำ</h1>
+        <p>กำหนดคำถามและคำตอบสำหรับ 3 รอบ</p>
+    </header>
+
+    <div class="admin-layout" style="margin-bottom: 24px;">
+        <!-- Theme Card -->
+        <div class="bento-panel wide" style="flex-direction:row; justify-content:space-between; align-items:center; padding: 20px 30px;">
+            <div style="display:flex; align-items:center; gap: 20px;">
+                <h3 style="margin:0;"><i class="bi bi-palette-fill"></i> ธีมสีเกม</h3>
+                <div class="bento-row" style="gap:10px;">
+                    <input type="color" id="bg-color1" class="premium-color" style="height:40px; border-radius:8px;" value="#000000">
+                    <span style="color:var(--text-muted); font-weight:bold;">➜</span>
+                    <input type="color" id="bg-color2" class="premium-color" style="height:40px; border-radius:8px;" value="#1a1a1a">
+                </div>
+                <button class="premium-btn btn-secondary" style="margin:0; width:auto; padding: 10px 20px; border-radius:10px;" onclick="saveTheme(2)"><i class="bi bi-check-circle"></i> บันทึกสี</button>
+            </div>
+            <a href="game_fillword.html" target="_blank" class="premium-btn btn-secondary" style="margin:0; width:auto; border-radius:10px;"><i class="bi bi-rocket-takeoff-fill"></i> เปิดดูเกม</a>
+        </div>
+    </div>
+
+    <div class="admin-layout single-col" id="editor-area" style="gap:30px;">
+        <!-- JS Injects Here -->
+    </div>
+    
+    <div class="admin-layout single-col" style="margin-top: 10px; display: flex; flex-direction: row; gap: 15px;">
+        <button class="premium-btn btn-primary" style="padding: 20px; font-size:1.2rem; flex: 2;" onclick="saveData()"><i class="bi bi-floppy-fill"></i> บันทึกข้อมูลทั้งหมด</button>
+        <button class="premium-btn" style="padding: 20px; font-size:1.2rem; flex: 1; background: #FF7B00; color: #000; border: 2px solid #000; font-weight: bold;" onclick="triggerReveal()"><i class="bi bi-eye-fill"></i> เฉลย</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        // Check Login Status
+        checkAuth();
+
+        database.ref('game_fillword').once('value').then(snapshot => {
+            const data = snapshot.val() || [];
+            renderEditor(data);
+        });
+
+        function renderEditor(data) {
+            const area = document.getElementById('editor-area');
+            area.innerHTML = '';
+            
+            const items = (data.length === 3) ? data : [{question:"", answer:"", puzzle:"", timer:60, timer_format:'seconds'}, {}, {}];
+
+            items.forEach((item, index) => {
+                const initialAnswer = item.answer || "";
+                const timerVal = item.timer || 60;
+                const timerFmt = item.timer_format || 'seconds';
+                
+                // แปลงค่าเวลาสำหรับแสดงผล (ถ้าเป็น digital ให้โชว์ MM:SS)
+                let displayTime = timerVal;
+                if(timerFmt === 'digital') displayTime = secondsToMmSs(timerVal);
+
+                area.innerHTML += `
+                    <div class="bento-panel" id="box-${index}">
+                        <h3><i class="bi bi-${index+1}-circle"></i> รอบที่ ${index + 1}</h3>
+                        
+                        <div class="bento-row">
+                            <div class="input-group" style="flex:2;">
+                                <label>1. ตั้งคำถาม</label>
+                                <input type="text" id="q-${index}" value="${item.question || ''}" placeholder="พิมพ์คำถาม..." class="premium-input">
+                            </div>
+                            
+                            <div class="input-group" style="flex:1;">
+                                <label>รูปแบบเวลา</label>
+                                <select id="fmt-${index}" onchange="toggleFormat(${index})" class="premium-select">
+                                    <option value="seconds" ${timerFmt=='seconds'?'selected':''}>วินาที (60)</option>
+                                    <option value="digital" ${timerFmt=='digital'?'selected':''}>นาฬิกา (01:00)</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group" style="flex:1;">
+                                <label>เวลาเริ่มต้น</label>
+                                <input type="text" id="t-display-${index}" value="${displayTime}" class="premium-input">
+                                <input type="hidden" id="t-real-${index}" value="${timerVal}"> 
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>2. เฉลยคำตอบ</span>
+                                <button style="background:transparent; border:none; color:var(--primary); cursor:pointer; font-weight:600;" onclick="generateButtons(${index})"><i class="bi bi-arrow-clockwise"></i> อัปเดตช่องซ่อน</button>
+                            </label>
+                            <input type="text" id="a-${index}" value="${initialAnswer}" oninput="generateButtons(${index})" class="premium-input">
+                        </div>
+                        
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label>3. คลิกตัวอักษรเพื่อซ่อน (เปลี่ยนเป็นช่องว่างในหน้าเกม)</label>
+                            <div class="char-selector-area" id="chars-${index}"></div>
+                            <input type="hidden" id="p-${index}" value="${item.puzzle || ''}">
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => { generateButtons(index, item.puzzle); }, 100);
+            });
+        }
+
+        // เปลี่ยนรูปแบบการกรอก เมื่อเลือก Dropdown
+        function toggleFormat(idx) {
+            const fmt = document.getElementById(`fmt-${idx}`).value;
+            const realVal = document.getElementById(`t-real-${idx}`).value;
+            const inputDisplay = document.getElementById(`t-display-${idx}`);
+
+            if(fmt === 'digital') {
+                inputDisplay.value = secondsToMmSs(realVal);
+                inputDisplay.placeholder = "00:00";
+            } else {
+                inputDisplay.value = realVal;
+                inputDisplay.placeholder = "60";
+            }
+        }
+
+        function secondsToMmSs(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function parseToSeconds(val) {
+            if (String(val).includes(':')) {
+                const parts = val.split(':');
+                return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+            }
+            return parseInt(val) || 60;
+        }
+
+        function generateButtons(index, loadedPuzzle = null) {
+            const answerInput = document.getElementById(`a-${index}`);
+            const charContainer = document.getElementById(`chars-${index}`);
+            const puzzleInput = document.getElementById(`p-${index}`);
+            const fullText = answerInput.value;
+            if (loadedPuzzle === undefined) puzzleInput.value = ""; 
+            charContainer.innerHTML = ''; 
+
+            let chars = [];
+            if (window.Intl && Intl.Segmenter) {
+                const segmenter = new Intl.Segmenter('th', { granularity: 'grapheme' });
+                chars = Array.from(segmenter.segment(fullText)).map(s => s.segment);
+            } else { chars = fullText.split(''); }
+            
+            let puzzleChars = loadedPuzzle ? loadedPuzzle.split(' ') : [];
+
+            chars.forEach((char, charIdx) => {
+                const btn = document.createElement('div');
+                btn.className = 'char-btn';
+                btn.innerText = char;
+                if (loadedPuzzle && puzzleChars.length === chars.length && puzzleChars[charIdx] === '_') {
+                    btn.classList.add('is-hidden'); btn.innerText = '_';
+                }
+                btn.onclick = () => {
+                    btn.classList.toggle('is-hidden');
+                    btn.innerText = btn.classList.contains('is-hidden') ? '_' : char;
+                    updatePuzzleValue(index); 
+                };
+                charContainer.appendChild(btn);
+            });
+            updatePuzzleValue(index);
+        }
+
+        function updatePuzzleValue(index) {
+            const btns = document.getElementById(`chars-${index}`).getElementsByClassName('char-btn');
+            document.getElementById(`p-${index}`).value = Array.from(btns).map(b => b.innerText).join(' ');
+        }
+
+        function saveData() {
+            const payload = [];
+            for(let i=0; i<3; i++) {
+                updatePuzzleValue(i);
+                // แปลงค่าเวลาเป็นวินาที ก่อนบันทึก
+                const displayVal = document.getElementById(`t-display-${i}`).value;
+                const finalSec = parseToSeconds(displayVal);
+                
+                payload.push({
+                    question: document.getElementById(`q-${i}`).value,
+                    answer: document.getElementById(`a-${i}`).value,
+                    puzzle: document.getElementById(`p-${i}`).value,
+                    timer: finalSec,
+                    timer_format: document.getElementById(`fmt-${i}`).value
+                });
+            }
+            database.ref('game_fillword').set(payload).then(() => {
+                alert('บันทึกเรียบร้อย!');
+            });
+        }
+
+        function triggerReveal() {
+            database.ref('game_commands/fillword').set({
+                action: 'reveal_all',
+                timestamp: Date.now()
+            }).then(() => {
+                alert('ส่งคำสั่งเฉลยไปที่หน้าจอเกมแล้ว!');
+            });
+        }
+
+        function loadTheme(gameId) { 
+            database.ref(`game_theme/${gameId}`).once('value').then(snapshot => { 
+                const data = snapshot.val();
+                if(data) { 
+                    if(data.color1) document.getElementById('bg-color1').value = data.color1; 
+                    if(data.color2) document.getElementById('bg-color2').value = data.color2; 
+                } 
+            }); 
+        }
+        function saveTheme(gameId) { 
+            const c1 = document.getElementById('bg-color1').value; 
+            const c2 = document.getElementById('bg-color2').value; 
+            database.ref(`game_theme/${gameId}`).update({ 
+                color1: c1, 
+                color2: c2, 
+                direction: 'to right' 
+            }).then(() => alert('บันทึกสีพื้นหลังเรียบร้อย')); 
+        }
+        loadTheme(2);
+    </script>
+    <script src="toast.js"></script>
+</body>
+</html>

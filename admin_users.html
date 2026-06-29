@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการผู้ใช้</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 20px; margin: 0; background: transparent !important; }
+        
+        .error { color: #ff6b6b; margin-top: 15px; text-align: center; display: none; background: rgba(255, 107, 107, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 107, 107, 0.2); }
+        .success { color: #4cd137; margin-top: 15px; text-align: center; display: none; background: rgba(76, 209, 55, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(76, 209, 55, 0.2); }
+    </style>
+</head>
+<body class="glass-theme">
+    <header class="page-header">
+        <h1>เพิ่มบัญชีผู้ดูแลระบบ</h1>
+        <p>สร้างบัญชีเพื่อให้ทีมงานสามารถเข้าระบบมาจัดการเกมได้</p>
+    </header>
+
+    <div class="admin-layout single-col">
+        <div class="bento-panel wide" style="max-width:600px; margin:0 auto; width:100%;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <i class="bi bi-person-plus" style="font-size:3rem; color:var(--primary);"></i>
+                <h3 style="margin-top:10px;">สร้างบัญชีทีมงาน</h3>
+            </div>
+
+            <div class="input-group" style="margin-bottom:15px;">
+                <label>อีเมล</label>
+                <input type="email" id="new-email" placeholder="ตัวอย่าง: team@example.com" class="premium-input">
+            </div>
+
+            <div class="input-group" style="margin-bottom:20px;">
+                <label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+                <input type="password" id="new-password" placeholder="••••••" class="premium-input">
+            </div>
+
+            <div id="msg-error" class="error">เกิดข้อผิดพลาด</div>
+            <div id="msg-success" class="success">สร้างบัญชีสำเร็จ!</div>
+
+            <button class="premium-btn btn-primary" style="padding:15px; font-size:1.1rem; width:100%;" onclick="createUser()"><i class="bi bi-person-plus-fill"></i> สร้างบัญชีใหม่</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        // Check Login Status (ใช้ auth หลักของหน้าเว็บ)
+        checkAuth();
+
+        // ทริกเกอร์สร้างแอปสำรองเพื่อสมัครสมาชิก โดยไม่ทำให้แอดมินคนปัจจุบันหลุดจากระบบ
+        const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+        const secondaryAuth = secondaryApp.auth();
+
+        function createUser() {
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            const errBox = document.getElementById('msg-error');
+            const sucBox = document.getElementById('msg-success');
+
+            errBox.style.display = 'none';
+            sucBox.style.display = 'none';
+
+            if(!email || password.length < 6) {
+                errBox.innerText = "กรุณากรอกอีเมล และรหัสผ่านอย่างน้อย 6 ตัวอักษร";
+                errBox.style.display = 'block';
+                return;
+            }
+
+            secondaryAuth.createUserWithEmailAndPassword(email, password)
+                .then(() => {
+                    // สมัครเสร็จปุ๊บ ให้ secondaryAuth ล็อกเอาท์ทันทีเพื่อความปลอดภัย
+                    secondaryAuth.signOut();
+                    
+                    sucBox.innerText = "สร้างบัญชีสำเร็จ! (ทีมงานใช้ล็อกอินได้ทันที)";
+                    sucBox.style.display = 'block';
+                    
+                    // เคลียร์ช่อง
+                    document.getElementById('new-email').value = '';
+                    document.getElementById('new-password').value = '';
+                })
+                .catch((error) => {
+                    errBox.innerText = "ข้อผิดพลาด: " + error.message;
+                    errBox.style.display = 'block';
+                });
+        }
+    </script>
+    <script src="toast.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Kanit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            transition: background 0.5s;
+        }
+
+        .timer-display {
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            font-variant-numeric: tabular-nums; 
+        }
+
+        .status-normal { color: #28a745; }
+        .status-danger { color: #dc3545; text-shadow: 0 0 50px rgba(220, 53, 69, 0.6); }
+
+        @keyframes pulse-anim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .anim-pulse {
+            animation: pulse-anim 0.8s infinite ease-in-out;
+        }
+
+        .end-message {
+            font-size: 15vw;
+            color: #fff;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0%{transform:scale(0);} 100%{transform:scale(1);} }
+
+        .controls {
+            position: fixed; bottom: 20px;
+            opacity: 0.3; transition: 0.3s;
+            display: flex; gap: 10px;
+        }
+        .controls:hover { opacity: 1; }
+        button {
+            padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.2rem; font-family: 'Kanit', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display" class="timer-display status-normal" onclick="toggleTimer()">00:00</div>
+
+    <div class="controls">
+        <button style="background:#fff; color:#000;" onclick="toggleTimer()">⏯️ เริ่ม / หยุด</button>
+        <button style="background:#dc3545; color:#fff;" onclick="resetTimer()">🔄 รีเซ็ต</button>
+    </div>
+
+    <script>
+        let config = {};
+        let timeLeft = 30;
+        let timerInterval = null;
+        let isRunning = false;
+        const display = document.getElementById('display');
+
+        fetch('api_theme.php?id=3').then(res=>res.json()).then(data=>{
+            if(data) document.body.style.background = `radial-gradient(circle, ${data.color1}, ${data.color2})`;
+        });
+
+        function loadConfig() {
+            fetch('api_timer.php').then(res=>res.json()).then(data => {
+                config = data;
+                if(!config.time_format) config.time_format = 'seconds';
+                resetTimer();
+            });
+        }
+        loadConfig();
+
+        // ฟังก์ชันแปลงเวลาเป็น MM:SS (หลักนาที:หลักวินาที)
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            const pad = (num) => num.toString().padStart(2, '0');
+            return `${pad(m)}:${pad(s)}`;
+        }
+
+        function updateDisplay() {
+            if (timeLeft <= 0) {
+                display.className = "end-message";
+                display.innerHTML = config.end_message;
+                stopTimer();
+                return;
+            }
+
+            if (config.time_format === 'digital') {
+                display.innerText = formatTime(timeLeft);
+                display.style.fontSize = "30vw"; // ปรับขนาดให้พอดีจอ (MM:SS กว้างกว่าเลขเดี่ยวๆ นิดหน่อย)
+            } else {
+                display.innerText = timeLeft;
+                display.style.fontSize = "35vw";
+            }
+
+            if (timeLeft <= 10) {
+                display.classList.remove('status-normal');
+                display.classList.add('status-danger');
+                if (config.is_pulse == 1) display.classList.add('anim-pulse');
+            } else {
+                display.classList.add('status-normal');
+                display.classList.remove('status-danger');
+                display.classList.remove('anim-pulse');
+                display.classList.remove('end-message');
+            }
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            if (timeLeft <= 0) resetTimer();
+            
+            isRunning = true;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                if (timeLeft <= 0) stopTimer();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            if(timeLeft > 0) display.classList.remove('anim-pulse'); 
+        }
+
+        function toggleTimer() {
+            if (isRunning) stopTimer();
+            else startTimer();
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timeLeft = parseInt(config.duration);
+            
+            display.className = "timer-display status-normal"; 
+            if (config.time_format === 'digital') {
+                display.innerText = formatTime(timeLeft);
+                display.style.fontSize = "30vw";
+            } else {
+                display.innerText = timeLeft;
+                display.style.fontSize = "35vw";
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') resetTimer();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชมอร่อยชิงแชมป์ - Premium Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Gaming Dashboard Brutalist Specific Variables */
+        :root {
+            --sidebar-bg: #FFFFFF; /* White for sidebar */
+            --active-item: #FF2A2A; 
+            --active-item-bg: #FF2A2A;
+            --text-main: #000000;
+            --text-muted: #333333;
+        }
+
+        body {
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            /* Background comes from style.css */
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: var(--border-thick);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            padding: 0 12px;
+            border-bottom: var(--border-thick);
+            padding-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--active-item);
+            border: var(--border-thick);
+            box-shadow: 4px 4px 0px var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            margin: 0;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .nav-menu::-webkit-scrollbar { width: 8px; }
+        .nav-menu::-webkit-scrollbar-track { background: var(--bg-panel); border-left: 2px solid #000; }
+        .nav-menu::-webkit-scrollbar-thumb { background: #000; }
+
+        .nav-title {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            text-transform: uppercase;
+            font-weight: 500;
+            margin: 20px 0 5px 0;
+            background: #fff;
+            border: 2px solid #000;
+            padding: 4px 8px;
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 2px solid transparent;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.1s;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .nav-item i {
+            font-size: 1.3rem;
+        }
+
+        .nav-item:hover {
+            border: var(--border-thick);
+            background-color: #fff;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background-color: var(--active-item-bg);
+            border: var(--border-thick);
+            box-shadow: 4px 4px 0px var(--border-color);
+        }
+
+        .user-profile {
+            margin-top: auto;
+            padding: 12px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: var(--border-thick);
+            box-shadow: 4px 4px 0px var(--border-color);
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .user-profile:hover {
+            background: var(--secondary);
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            background: var(--active-item);
+            border: 2px solid #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 500;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name { font-size: 1rem; font-weight: 800; color: #000; text-transform: uppercase;}
+        .user-role { font-size: 0.8rem; color: #000; font-weight: 600;}
+
+        .logout-btn {
+            margin-left: auto;
+            background: #000;
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.1s;
+        }
+        .logout-btn:hover { background: var(--active-item); }
+
+        /* --- Main Content Area --- */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: var(--border-thick);
+            background: var(--bg-main);
+        }
+
+        .greeting {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+        .greeting span {
+            font-weight: 500;
+            background: var(--secondary);
+            padding: 4px 10px;
+            border: 2px solid #000;
+            margin-left: 10px;
+            display: inline-block;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .action-btn {
+            height: 48px;
+            background: var(--secondary);
+            border: var(--border-thick);
+            box-shadow: 4px 4px 0px var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .action-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border-color);
+        }
+
+        /* Iframe Container */
+        .iframe-wrapper {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .iframe-container {
+            flex: 1;
+            background: var(--bg-main);
+            border: var(--border-thick);
+            box-shadow: var(--shadow-hard);
+            overflow: hidden;
+            position: relative;
+            transition: opacity 0.1s ease;
+        }
+        
+        .iframe-container.loading {
+            opacity: 0.5;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="bi bi-joystick"></i></div>
+            <h1 class="logo-text">TNY GAME</h1>
+        </div>
+
+        <ul class="nav-menu">
+            <a href="#" class="nav-item active" onclick="loadPage('welcome.html', 'หน้าหลัก', this)">
+                <i class="bi bi-house-door-fill"></i> หน้าหลัก
+            </a>
+            
+            <div class="nav-title">App Library</div>
+            
+            <a href="#" class="nav-item" onclick="loadPage('admin.html', 'เกมเปิดป้าย', this)">
+                <i class="bi bi-grid-3x3-gap-fill"></i> เกมเปิดป้าย
+            </a>
+            <a href="#" class="nav-item" onclick="loadPage('admin_fillword.html', 'เกมทายคำ', this)">
+                <i class="bi bi-keyboard-fill"></i> เกมทายคำ
+            </a>
+            <a href="#" class="nav-item" onclick="loadPage('admin_guessword_v2.html', 'เกมทายคำ V2 (ตัวเลข)', this)">
+                <i class="bi bi-123"></i> ทายคำ V2
+            </a>
+            <a href="#" class="nav-item" onclick="loadPage('admin_guessword_v3.html', 'เกมทายคำ V3 (ตั้งคำถาม)', this)">
+                <i class="bi bi-chat-left-quote-fill"></i> ทายคำ V3
+            </a>
+            
+            <div class="nav-title">Utilities</div>
+
+            <a href="#" class="nav-item" onclick="loadPage('tool_ad_generator.html', 'เครื่องมือสร้างโฆษณา', this)">
+                <i class="bi bi-palette-fill"></i> เครื่องมือสร้างโฆษณา
+            </a>
+            <a href="#" class="nav-item" onclick="loadPage('admin_timer.html', 'นาฬิกาจับเวลา', this)">
+                <i class="bi bi-stopwatch-fill"></i> นาฬิกาจับเวลา
+            </a>
+            <a href="#" class="nav-item" onclick="loadPage('admin_users.html', 'จัดการผู้ใช้', this)">
+                <i class="bi bi-people-fill"></i> จัดการผู้ใช้
+            </a>
+        </ul>
+
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div class="user-info">
+                <span class="user-name">Admin User</span>
+                <span class="user-role">Super Admin</span>
+            </div>
+            <button class="logout-btn" onclick="logout()" title="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-area">
+        <header class="top-navbar">
+            <h2 class="greeting">หน้าปัจจุบัน: <span id="header-title">หน้าหลัก</span></h2>
+            
+            <div class="top-actions">
+                <button class="action-btn" onclick="triggerRevealAll()" title="เฉลยเกมบนหน้าจอผู้เล่น" style="padding: 0 20px; gap: 8px; background: #FF7B00; color: #000;">
+                    <i class="bi bi-eye-fill"></i> เฉลยเกม
+                </button>
+                <button class="action-btn" onclick="document.getElementById('mainFrame').contentWindow.location.reload()" title="รีเฟรชเนื้อหา" style="padding: 0 20px; gap: 8px;">
+                    <i class="bi bi-arrow-clockwise"></i> รีเฟรชหน้าต่าง
+                </button>
+            </div>
+        </header>
+
+        <div class="iframe-wrapper">
+            <div class="iframe-container" id="iframeContainer">
+                <iframe id="mainFrame" src="welcome.html" title="Admin Content" onload="document.getElementById('iframeContainer').classList.remove('loading')"></iframe>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+
+    <script>
+        // Check Login Status
+        checkAuth();
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html';
+            });
+        }
+
+        function loadPage(url, pageTitle, element) {
+            const container = document.getElementById('iframeContainer');
+            container.classList.add('loading'); // Show transition
+
+            const timestamp = new Date().getTime();
+            document.getElementById('mainFrame').src = url + '?v=' + timestamp;
+            
+            // Update Title
+            document.getElementById('header-title').innerText = pageTitle;
+
+            // Update Active State
+            document.querySelectorAll('.nav-item').forEach(link => {
+                link.classList.remove('active');
+            });
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        function triggerRevealAll() {
+            database.ref('global_commands').set({
+                action: 'reveal_all',
+                timestamp: Date.now()
+            }).then(() => {
+                if(window.alert) window.alert('ส่งคำสั่งเฉลยไปที่หน้าจอเกมแล้ว!');
+            });
+        }
+    </script>
+</body>
+</html>

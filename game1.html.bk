@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมเปิดป้าย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Kanit', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; padding: 10px; overflow: hidden; 
+        }
+
+        h1 { 
+            color: #c49a6c; font-size: 5vh; margin: 0 0 20px 0; 
+            text-shadow: 2px 2px 4px #000; white-space: nowrap; 
+        }
+
+        /* Grid Container */
+        .game-grid { 
+            display: flex;
+            flex-wrap: wrap;       
+            justify-content: center; 
+            align-content: center;   
+            gap: var(--gap, 15px); 
+            
+            width: 95vw; max-width: 1600px;
+            height: 85vh;
+        }
+
+        /* ตัวการ์ด */
+        .card { 
+            background-color: transparent; 
+            perspective: 1000px; cursor: pointer; 
+            /* คำนวณขนาดการ์ดอัตโนมัติตามจำนวนแถวและคอลัมน์ */
+            width: calc((100% - (var(--gap) * (var(--cols) - 1))) / var(--cols));
+            height: calc((100% - (var(--gap) * (var(--rows) - 1))) / var(--rows));
+        }
+
+        .card-inner { 
+            position: relative; width: 100%; height: 100%; 
+            text-align: center; transition: transform 0.6s; transform-style: preserve-3d; 
+        }
+        
+        /* พลิกการ์ดเมื่อมี Class flipped */
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+
+        .card-front, .card-back { 
+            position: absolute; width: 100%; height: 100%; 
+            -webkit-backface-visibility: hidden; backface-visibility: hidden; 
+            border-radius: 15px; font-weight: bold; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+        }
+        
+        /* ด้านหน้า (รูปภาพ) */
+        .card-front { 
+            background-color: #222; color: #fff; 
+            background-image: url('uploads/card_cover.png'); 
+            background-size: cover; background-position: center;
+            
+            /* --- จัดเลขไว้มุมขวาล่าง --- */
+            display: flex;
+            justify-content: flex-end; /* ชิดขวา */
+            align-items: flex-end;     /* ชิดล่าง */
+            padding: 10px;             /* เว้นระยะจากขอบนิดหน่อย */
+            
+            /* ขนาดตัวอักษรเล็ก */
+            font-size: 3vh; 
+            text-shadow: 2px 2px 4px #000; /* เงาดำเพื่อให้เห็นชัดบนพื้นหลัง */
+        }
+        
+        /* ด้านหลัง (คำศัพท์) */
+        .card-back { 
+            display: flex; align-items: center; justify-content: center;
+            background-color: #c49a6c; color: #000; transform: rotateY(180deg); 
+            border: 3px solid #fff; 
+            font-size: calc(20vh / var(--rows, 3)); /* ปรับขนาดฟอนต์ตามจำนวนแถว */
+            padding: 5px; line-height: 1.1; word-wrap: break-word;
+        }
+
+        /* ปุ่ม Reset เล็กๆ มุมจอ */
+        .btn-reset {
+            position: fixed; bottom: 10px; right: 10px;
+            background: rgba(255, 255, 255, 0.1); color: #aaa;
+            border: none; padding: 5px 10px; border-radius: 5px;
+            cursor: pointer; font-size: 0.8rem;
+        }
+        .btn-reset:hover { background: #dc3545; color: #fff; }
+		
+        button { 
+            padding: 15px 30px; font-family: 'Kanit', sans-serif; font-size: 1.2rem; 
+            border: none; border-radius: 50px; cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
+            display: flex; align-items: center; gap: 10px; 
+        }
+        .btn-reveal { background-color: #c49a6c; color: #000; font-weight: bold; }
+        .btn-reset  { background-color: #333; color: #fff; }
+        .btn-timer  { background-color: #17a2b8; color: #fff; font-weight: bold; display: none; }
+
+      body, button, a, .card {
+            /* เปลี่ยนตรง url เป็นที่อยู่ไฟล์รูปของคุณ */
+            cursor: url('Spoon.png'), auto !important;
+        
+    </style>
+</head>
+<body>
+    <h1>วัตถุดิบมีอะไรบ้าง?</h1>
+    
+    <div class="game-grid" id="gameBoard"></div>
+
+    <button class="btn-reset" onclick="location.reload()">Reset Game</button>
+
+    <script>
+        // 1. Cache Busting ภาพ (แก้ปัญหาภาพไม่เปลี่ยนหลังอัปโหลด)
+        const timestamp = new Date().getTime();
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `.card-front { background-image: url('uploads/card_cover.png?v=${timestamp}') !important; }`;
+        document.head.appendChild(styleSheet);
+
+        // 2. โหลดธีม (สีพื้นหลัง)
+        fetch('api_theme.php?id=1').then(res=>res.json()).then(data=>{
+            if(data) {
+                document.body.style.background = `linear-gradient(${data.direction}, ${data.color1}, ${data.color2})`;
+                const gapVal = data.grid_gap ? data.grid_gap : 15;
+                document.getElementById('gameBoard').style.setProperty('--gap', gapVal + 'px');
+            }
+        });
+
+        // 3. โหลดข้อมูลเกม
+        fetch('api.php').then(res => res.json()).then(data => {
+            // ดึงข้อมูลชุดแรกชุดเดียว (เพราะเราตัดระบบรอบออกแล้ว)
+            const gameWords = data[0] || [];
+            renderGame(gameWords);
+        });
+
+        function renderGame(words) {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            // ถ้าไม่มีข้อมูล ให้โชว์ 12 ใบว่างๆ
+            const currentWords = words.length > 0 ? words : Array(12).fill("-");
+            const count = currentWords.length;
+
+            // คำนวณ Grid Layout (กี่แถว กี่คอลัมน์)
+            const layout = calculateLayout(count);
+            board.style.setProperty('--cols', layout.cols);
+            board.style.setProperty('--rows', layout.rows);
+            
+            currentWords.forEach((word, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                
+                // สร้าง HTML การ์ด: หน้าเป็นเลข (index+1), หลังเป็นคำศัพท์
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">${index + 1}</div>
+                        <div class="card-back">${word}</div>
+                    </div>
+                `;
+                
+                // คลิกเพื่อพลิก
+                card.addEventListener('click', function() {
+                    this.classList.toggle('flipped'); 
+                });
+                
+                board.appendChild(card);
+            });
+        }
+
+        // ฟังก์ชันคำนวณ Grid ให้สวยงามตามจำนวนป้าย
+        function calculateLayout(n) {
+            if (n <= 4) return { cols: 2, rows: 2 };
+            if (n <= 6) return { cols: 3, rows: 2 };
+            if (n <= 9) return { cols: 3, rows: 3 };
+            if (n <= 12) return { cols: 4, rows: 3 }; 
+            if (n <= 15) return { cols: 5, rows: 3 }; 
+            if (n <= 16) return { cols: 4, rows: 4 };
+            if (n <= 20) return { cols: 5, rows: 4 };
+            
+            const sqrt = Math.sqrt(n);
+            let cols = Math.ceil(sqrt);
+            if (n/cols > 3) cols++;
+            let rows = Math.ceil(n / cols);
+            return { cols, rows };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตั้งค่านาฬิกาจับเวลา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 20px; margin: 0; background: transparent !important; }
+        .switch-row { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 14px; }
+        .toggle-label { font-size: 1.1rem; color: #fff; }
+        input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); }
+    </style>
+</head>
+<body class="glass-theme">
+    <header class="page-header">
+        <h1>ตั้งค่าตัวจับเวลา</h1>
+        <p>ปรับแต่งนาฬิกาและเอฟเฟกต์การนับถอยหลัง</p>
+    </header>
+
+    <div class="admin-layout" style="margin-bottom: 24px;">
+        <!-- Card 1: Theme -->
+        <div class="bento-panel wide" style="flex-direction:row; justify-content:space-between; align-items:center; padding: 20px 30px;">
+            <div style="display:flex; align-items:center; gap: 20px;">
+                <h3 style="margin:0;"><i class="bi bi-palette-fill"></i> ธีมสีพื้นหลัง</h3>
+                <div class="bento-row" style="gap:10px;">
+                    <input type="color" id="bg-color1" class="premium-color" style="height:40px; border-radius:8px;" value="#000000">
+                    <span style="color:var(--text-muted); font-weight:bold;">➜</span>
+                    <input type="color" id="bg-color2" class="premium-color" style="height:40px; border-radius:8px;" value="#222222">
+                </div>
+                <button class="premium-btn btn-secondary" style="margin:0; width:auto; padding: 10px 20px; border-radius:10px;" onclick="saveTheme(3)"><i class="bi bi-check-circle"></i> บันทึกสี</button>
+            </div>
+            <a href="timer.html" target="_blank" class="premium-btn btn-secondary" style="margin:0; width:auto; border-radius:10px;"><i class="bi bi-rocket-takeoff-fill"></i> เปิดหน้าจอจับเวลา</a>
+        </div>
+    </div>
+
+    <div class="admin-layout">
+        <!-- Card 2: Timer Config -->
+        <div class="bento-panel wide">
+            <h3><i class="bi bi-stopwatch"></i> ตั้งค่าเวลา</h3>
+            
+            <div class="bento-row">
+                <div class="input-group" style="flex:1;">
+                    <label>รูปแบบการแสดงผล</label>
+                    <select id="time-format" onchange="toggleInputFormat()" class="premium-select">
+                        <option value="seconds">วินาทีล้วน (เช่น 90)</option>
+                        <option value="digital">นาฬิกาดิจิตอล (MM:SS)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group" style="flex:1;">
+                    <label id="duration-label">เวลาเริ่มต้น</label>
+                    <input type="text" id="duration-input" placeholder="00:00" class="premium-input">
+                    <input type="hidden" id="real-duration" value="30">
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top:20px;">
+                <label>ข้อความเมื่อหมดเวลา</label>
+                <input type="text" id="end-message" value="หมดเวลา!" class="premium-input">
+            </div>
+
+            <div class="switch-row" style="margin-top:20px;">
+                <div>
+                    <span class="toggle-label" style="font-weight:600;"><i class="bi bi-heart-pulse"></i> เอฟเฟกต์ตื่นเต้น (10 วินาทีสุดท้าย)</span>
+                    <p style="margin: 5px 0 0 0; font-size:0.85rem; color:var(--text-muted);">ตัวเลขจะเปลี่ยนเป็นสีแดงและขยายเข้า-ออก</p>
+                </div>
+                <input type="checkbox" id="is-pulse" checked>
+            </div>
+
+            <button class="premium-btn btn-primary" style="margin-top:30px;" onclick="saveData()"><i class="bi bi-floppy-fill"></i> บันทึกการตั้งค่า</button>
+        </div>
+        
+        <!-- Card 3: Control -->
+        <div class="bento-panel wide" style="margin-top: 20px;">
+            <h3><i class="bi bi-controller"></i> ควบคุมหน้าจอเวลา</h3>
+            <div class="bento-row">
+                <button class="premium-btn" style="flex:1; background: #28a745; color: #fff; font-weight: bold; font-size: 1.2rem;" onclick="sendTimerCommand('start')"><i class="bi bi-play-fill"></i> เริ่ม</button>
+                <button class="premium-btn" style="flex:1; background: #dc3545; color: #fff; font-weight: bold; font-size: 1.2rem;" onclick="sendTimerCommand('stop')"><i class="bi bi-pause-fill"></i> หยุด</button>
+                <button class="premium-btn" style="flex:1; background: #6c757d; color: #fff; font-weight: bold; font-size: 1.2rem;" onclick="sendTimerCommand('reset')"><i class="bi bi-arrow-counterclockwise"></i> รีเซ็ต</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        // Check Login Status
+        checkAuth();
+
+        // โหลดข้อมูล
+        database.ref('game_timer').once('value').then(snapshot => {
+            const data = snapshot.val();
+            if(data) {
+                document.getElementById('real-duration').value = data.duration;
+                document.getElementById('end-message').value = data.end_message;
+                document.getElementById('is-pulse').checked = (data.is_pulse == 1);
+                if(data.time_format) document.getElementById('time-format').value = data.time_format;
+                
+                // แปลงค่าแสดงผลให้ตรงกับ Format
+                updateInputDisplay(data.duration);
+            }
+        });
+
+        // ฟังก์ชันเปลี่ยนโหมดการกรอก (เรียกเมื่อเปลี่ยน Dropdown หรือโหลดหน้า)
+        function toggleInputFormat() {
+            const format = document.getElementById('time-format').value;
+            const realSec = document.getElementById('real-duration').value;
+            updateInputDisplay(realSec);
+        }
+
+        function updateInputDisplay(seconds) {
+            const format = document.getElementById('time-format').value;
+            const input = document.getElementById('duration-input');
+            const label = document.getElementById('duration-label');
+
+            if (format === 'digital') {
+                label.innerText = "⏳ เวลาเริ่มต้น (นาที:วินาที):";
+                input.placeholder = "เช่น 05:00";
+                // แปลงวินาที -> MM:SS
+                input.value = secondsToMmSs(seconds);
+            } else {
+                label.innerText = "⏳ เวลาเริ่มต้น (วินาที):";
+                input.placeholder = "เช่น 300";
+                input.value = seconds;
+            }
+        }
+
+        // แปลง วินาที -> MM:SS
+        function secondsToMmSs(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        // แปลง MM:SS (หรือตัวเลข) -> วินาที
+        function parseToSeconds(val) {
+            if (String(val).includes(':')) {
+                const parts = val.split(':');
+                const m = parseInt(parts[0]) || 0;
+                const s = parseInt(parts[1]) || 0;
+                return (m * 60) + s;
+            }
+            return parseInt(val) || 0;
+        }
+
+        function saveData() {
+            // แปลงค่าในช่องกรอกกลับเป็นวินาทีก่อนบันทึก
+            const inputValue = document.getElementById('duration-input').value;
+            const finalDuration = parseToSeconds(inputValue);
+            document.getElementById('real-duration').value = finalDuration; // อัปเดตค่าจริงเก็บไว้
+
+            const payload = {
+                duration: finalDuration,
+                end_message: document.getElementById('end-message').value,
+                is_pulse: document.getElementById('is-pulse').checked ? 1 : 0,
+                time_format: document.getElementById('time-format').value
+            };
+            
+            database.ref('game_timer').set(payload).then(() => {
+                alert(`บันทึกเรียบร้อย!\n(บันทึกเวลา: ${finalDuration} วินาที)`);
+            });
+        }
+
+        function sendTimerCommand(action) {
+            database.ref('game_commands/timer').set({
+                action: action,
+                timestamp: Date.now()
+            }).then(() => {
+                alert(`ส่งคำสั่ง ${action} ไปยังหน้าจอเวลาแล้ว!`);
+            });
+        }
+
+        function saveTheme(id) {
+            const c1=document.getElementById('bg-color1').value;
+            const c2=document.getElementById('bg-color2').value;
+            database.ref(`game_theme/${id}`).update({
+                color1: c1,
+                color2: c2,
+                direction: 'radial'
+            }).then(()=>alert('บันทึกธีมเรียบร้อย'));
+        }
+        database.ref('game_theme/3').once('value').then(snapshot => {
+            const d = snapshot.val();
+            if(d){ 
+                if(d.color1) document.getElementById('bg-color1').value = d.color1; 
+                if(d.color2) document.getElementById('bg-color2').value = d.color2; 
+            }
+        });
+    </script>
+    <script src="toast.js"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>นาฬิกาจับเวลา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* ล้างค่าเริ่มต้น */
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: #000; /* พื้นหลังดำ */
+            color: #fff;            /* ตัวหนังสือขาว (สำคัญ!) */
+            font-family: 'Kanit', sans-serif;
+            
+            /* จัดกึ่งกลางจอ */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* กล่องข้อความเวลา */
+        #display {
+            font-weight: bold;
+            line-height: 1;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            width: 100%;
+        }
+
+        /* --- โหมดปกติ: ตัวเลขใหญ่ --- */
+        .mode-time {
+            font-size: 35vw; /* ใหญ่สะใจ */
+        }
+
+        /* --- โหมดหมดเวลา: ตัวหนังสือเล็กลง (แก้ปัญหาล้นจอ) --- */
+        .mode-finish {
+            font-size: 20vw !important; /* ลดขนาดลงเพื่อให้คำว่า หมดเวลา พอดีจอ */
+            color: #dc3545;             /* สีแดง */
+            animation: blink 1s infinite;
+        }
+
+        /* สีเตือนช่วงท้าย */
+        .warning { color: #ffc107; }
+        .danger { color: #dc3545; }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        body:hover .controls, .controls:hover { opacity: 1; }
+
+
+    </style>
+</head>
+<body>
+
+    <div id="display" class="mode-time">00:00</div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        let timeLeft = 0;
+        let initialTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        
+        let endMessage = "หมดเวลา!";
+        let isPulse = true;
+        let timeFormat = "digital"; // digital or seconds
+
+        const display = document.getElementById('display');
+
+        // Load config
+        database.ref('game_timer').on('value', snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                const newDuration = parseInt(data.duration) || 0;
+                if (!isRunning && initialTime !== newDuration) {
+                    initialTime = newDuration;
+                    timeLeft = newDuration;
+                }
+                endMessage = data.end_message || "หมดเวลา!";
+                isPulse = (data.is_pulse == 1);
+                timeFormat = data.time_format || "digital";
+                
+                if (!isRunning) {
+                    updateDisplay();
+                }
+            }
+        });
+
+        // Listen for remote commands
+        let lastCommandTimestamp = null;
+        database.ref('game_commands/timer').on('value', snapshot => {
+            const data = snapshot.val();
+            if (lastCommandTimestamp === null) {
+                lastCommandTimestamp = data ? data.timestamp : 0;
+                return; // Ignore on page load
+            }
+            if (data && data.timestamp !== lastCommandTimestamp) {
+                lastCommandTimestamp = data.timestamp;
+                if (data.action === 'start') {
+                    startTimer();
+                } else if (data.action === 'stop') {
+                    stopTimer();
+                } else if (data.action === 'reset') {
+                    resetTimer();
+                }
+            }
+        });
+
+        function updateDisplay() {
+            if (timeLeft < 0) {
+                display.innerText = endMessage;
+                display.className = "mode-finish"; 
+                return;
+            }
+
+            if (timeFormat === 'digital') {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                display.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            } else {
+                display.innerText = timeLeft;
+            }
+            
+            display.className = "mode-time";
+            
+            if (isPulse && timeLeft <= 10 && timeLeft >= 0) display.classList.add('danger');
+            else if (timeLeft <= 30 && timeLeft >= 0) display.classList.add('warning');
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            if (timeLeft < 0) resetTimer();
+
+            isRunning = true;
+            updateDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                if (timeLeft < 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timeLeft = initialTime;
+            updateDisplay();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (isRunning) stopTimer();
+                else startTimer();
+            }
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>

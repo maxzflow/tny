@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>นาฬิกาจับเวลา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* ล้างค่าเริ่มต้น */
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: #000; /* พื้นหลังดำ */
+            color: #fff;            /* ตัวหนังสือขาว (สำคัญ!) */
+            font-family: 'Kanit', sans-serif;
+            
+            /* จัดกึ่งกลางจอ */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* กล่องข้อความเวลา */
+        #display {
+            font-weight: bold;
+            line-height: 1;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            width: 100%;
+        }
+
+        /* --- โหมดปกติ: ตัวเลขใหญ่ --- */
+        .mode-time {
+            font-size: 35vw; /* ใหญ่สะใจ */
+        }
+
+        /* --- โหมดหมดเวลา: ตัวหนังสือเล็กลง (แก้ปัญหาล้นจอ) --- */
+        .mode-finish {
+            font-size: 20vw !important; /* ลดขนาดลงเพื่อให้คำว่า หมดเวลา พอดีจอ */
+            color: #dc3545;             /* สีแดง */
+            animation: blink 1s infinite;
+        }
+
+        /* สีเตือนช่วงท้าย */
+        .warning { color: #ffc107; }
+        .danger { color: #dc3545; }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        /* แผงควบคุม (ซ่อนอยู่ด้านล่าง) */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 50px;
+            opacity: 0; /* ซ่อน */
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        
+        /* เอาเมาส์ชี้ด้านล่างถึงจะโผล่ */
+        body:hover .controls, .controls:hover { opacity: 1; }
+
+        input {
+            width: 70px; padding: 10px; border-radius: 10px; border: none;
+            text-align: center; font-size: 1.2rem; font-weight: bold;
+        }
+
+        button {
+            padding: 10px 20px; border-radius: 20px; border: none;
+            font-family: 'Kanit', sans-serif; font-size: 1.2rem; cursor: pointer; font-weight: bold;
+        }
+        .btn-start { background: #28a745; color: #fff; }
+        .btn-stop { background: #dc3545; color: #fff; }
+        .btn-reset { background: #6c757d; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div id="display" class="mode-time">03:00</div>
+
+    <div class="controls">
+        <input type="number" id="input-min" value="3" min="0" placeholder="นาที">
+        <span style="align-self:center; font-weight:bold;">:</span>
+        <input type="number" id="input-sec" value="0" min="0" max="59" placeholder="วิ">
+        
+        <button class="btn-start" onclick="startTimer()">เริ่ม</button>
+        <button class="btn-stop" onclick="stopTimer()">หยุด</button>
+        <button class="btn-reset" onclick="resetTimer()">รีเซ็ต</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        let timeLeft = 180;
+        let timerInterval = null;
+        let isRunning = false;
+        let timerData = null;
+        
+        const display = document.getElementById('display');
+        const inputMin = document.getElementById('input-min');
+        const inputSec = document.getElementById('input-sec');
+
+        database.ref('game_theme/3').on('value', snapshot => { 
+            const data = snapshot.val();
+            if(data) document.body.style.background = `linear-gradient(${data.direction || 'to right'}, ${data.color1 || '#000'}, ${data.color2 || '#1a1a1a'})`; 
+        });
+
+        database.ref('game_timer').on('value', snapshot => {
+            timerData = snapshot.val();
+            if(timerData) {
+                timeLeft = timerData.duration || 180;
+                inputMin.value = Math.floor(timeLeft / 60);
+                inputSec.value = timeLeft % 60;
+                updateDisplay();
+            }
+        });
+
+        function updateDisplay() {
+            if (timeLeft < 0) {
+                // ถ้าหมดเวลา: เปลี่ยนข้อความ + เปลี่ยน Class เพื่อลดขนาดฟอนต์
+                display.innerText = (timerData && timerData.end_message) ? timerData.end_message : "หมดเวลา";
+                display.className = "mode-finish"; 
+                return;
+            }
+
+            // คำนวณเวลา
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            const fmt = (timerData && timerData.time_format) ? timerData.time_format : 'digital';
+            
+            if (fmt === 'digital') {
+                display.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            } else {
+                display.innerText = timeLeft;
+            }
+            
+            // รีเซ็ตเป็น Class ปกติ (ตัวใหญ่)
+            display.className = "mode-time";
+            
+            // เปลี่ยนสีตามเวลา
+            if (timeLeft <= 10) {
+                display.classList.add('danger');
+                if (timerData && timerData.is_pulse == 1) {
+                    display.style.animation = "blink 0.5s infinite";
+                }
+            } else if (timeLeft <= 30) {
+                display.classList.add('warning');
+                display.style.animation = "none";
+            } else {
+                display.classList.remove('danger', 'warning');
+                display.style.animation = "none";
+            }
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            if (timeLeft < 0) resetTimer();
+
+            // อัปเดตค่าจาก Input
+            if (!timerInterval) {
+                const m = parseInt(inputMin.value) || 0;
+                const s = parseInt(inputSec.value) || 0;
+                timeLeft = (m * 60) + s;
+            }
+
+            isRunning = true;
+            updateDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                if (timeLeft < 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            const m = parseInt(inputMin.value) || 0;
+            const s = parseInt(inputSec.value) || 0;
+            timeLeft = (m * 60) + s;
+            updateDisplay();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (isRunning) stopTimer();
+                else startTimer();
+            }
+        });
+
+        // รันครั้งแรกทันที
+        updateDisplay();
+    </script>
+</body>
+</html>

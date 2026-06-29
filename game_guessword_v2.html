@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมทายคำ V2 (ตัวเลข)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { 
+            background-color: #000; color: #fff; font-family: 'Kanit', sans-serif; 
+            /* Flexbox จัดกึ่งกลางพื้นฐาน */
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden; user-select: none;
+            padding: 0;
+        }
+
+        /* --- นาฬิกา --- */
+        .mini-timer {
+            position: absolute; top: 30px; font-size: 6rem; font-weight: 500;
+            background: #fff; color: #000; padding: 5px 40px; border-radius: 0;
+            border: 4px solid #000; box-shadow: 6px 6px 0px #000; transition: 0.3s; z-index: 10;
+            line-height: 1; font-variant-numeric: tabular-nums;
+            display: none;
+        }
+        .timer-normal { color: #000; }
+        .timer-warning { color: #FF2A2A; border-color: #FF2A2A; animation: pulse-red 0.8s infinite; }
+        @keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* พื้นที่เกม */
+        #game-area { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            width: 100%; 
+            /* ค่าเริ่มต้น: ดึงขึ้น 10% เพื่อชดเชยทางสายตา (Optical Center) */
+            transform: translateY(-10%);
+            transition: transform 0.3s ease;
+        }
+
+        .question-header { 
+            font-size: 3.5vw; color: #000; font-weight: 500; 
+            margin-bottom: 40px; text-align: center; 
+            background: #fff; padding: 10px 20px; border: 4px solid #000; box-shadow: 4px 4px 0px #000;
+        }
+
+        .puzzle-container { 
+            display: flex; flex-wrap: wrap; justify-content: center; 
+            gap: 15px; max-width: 90vw; 
+        }
+
+        /* กล่องตัวอักษร แบบ Glass Tile */
+        .char-box { 
+            font-size: 5vw; font-weight: 500; color: #000; 
+            background: #fff;
+            border: 4px solid #000;
+            border-bottom: 0.2em solid #000;
+            border-radius: 0;
+            box-shadow: none;
+            transition: all 0.1s; 
+            cursor: default; min-width: 6vw; min-height: 8vw;
+            display: flex; align-items: center; justify-content: center;
+            margin: 5px; text-shadow: none;
+            line-height: 1.3; padding: 0.2em 0.3em;
+            box-sizing: content-box;
+        }
+
+        .char-box.hidden-char { 
+            color: #fff; cursor: pointer; 
+            background: var(--primary); 
+            border-color: #000;
+            border-bottom: 0.2em solid #000;
+        }
+        .char-box.hidden-char:hover { 
+            transform: translate(0.05em, 0.05em); 
+            background: #e03227; 
+            border-bottom-width: 0.1em;
+            margin-top: 0.2em;
+        }
+
+        .char-box.solved { 
+            background: #008f39; 
+            color: #fff !important; 
+            border: 4px solid #000;
+            border-bottom: 0.2em solid #000;
+            margin-top: 0.1em;
+            animation: popIn 0.2s forwards; 
+        }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* ปุ่มควบคุม */
+        .control-bar { 
+            position: fixed; bottom: 30px; display: flex; gap: 15px; 
+            z-index: 20; 
+        }
+        
+        button.glass-btn { 
+            padding: 15px 30px; font-family: 'Kanit', sans-serif; font-size: 1.2rem; font-weight: 500;
+            border: 4px solid #000; border-radius: 0; cursor: pointer; 
+            box-shadow: 4px 4px 0px #000; 
+            display: flex; align-items: center; gap: 10px; transition: 0.1s;
+        }
+        button.glass-btn:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+        .btn-reveal { background-color: #FF7B00; color: #000; }
+        .btn-reset  { background-color: #000; color: #fff; }
+        .btn-timer  { background-color: #00E676; color: #000; display: none; }
+
+		body, button, a, .card, .char-box {
+            /* เปลี่ยนตรง url เป็นที่อยู่ไฟล์รูปของคุณ */
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23FF7B00' stroke='%23000' stroke-width='1'%3E%3Cpath d='M19.33 10.43c-3.14-2.83-6.52-4.17-9.5-2.69-1.31.65-2.22 1.83-2.6 3.24-.22.81-.22 1.63-.07 2.37.52 2.56 2.5 3.56 3.86.35.09.7.15 1.05.15 2.14 0 4.67-1.37 6.47-3.93 1.25-1.78 1.55-2.58 1-3zm-6.24 5.37c-.77-.2-2.12-.88-2.47-2.6-.1-1.07.56-1.76 1.13-2.04 2.15-1.07 4.79.03 7.15 2.15.52.47.79 1.03.62 1.61-.41.58-2.65 2.4-6.43 1.42z'/%3E%3Cpath d='M8.5 13.5l-6 6' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") 2 2, auto !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="mini-timer" class="mini-timer timer-normal">00</div>
+
+    <div id="game-area">
+        <div class="question-header" id="question-text">กำลังโหลด...</div>
+        <div class="puzzle-container" id="puzzle-wrapper"></div>
+    </div>
+
+    <div class="control-bar" id="controls">
+        <button class="glass-btn btn-timer" id="btn-timer" onclick="toggleTimerManual()">⏯️ จับเวลา</button>
+    </div>
+
+    <button class="fullscreen-btn" onclick="toggleFullScreen()" title="ขยายเต็มจอ" style="position: fixed; top: 20px; right: 20px; background: #fff; color: #000; border: 4px solid #000; width: 50px; height: 50px; border-radius: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.5rem; z-index: 20; transition: 0.1s; box-shadow: 4px 4px 0px #000;">
+        <i class="bi bi-arrows-fullscreen"></i>
+    </button>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="firebase_config.js"></script>
+    <script>
+        let itemData = null;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let isTimerRunning = false;
+        let isTimerEnabled = false;
+
+        database.ref('game_theme/4').on('value', snapshot => { 
+            const d = snapshot.val();
+            if(d) document.body.style.background = `linear-gradient(${d.direction || 'to right'}, ${d.color1 || '#fff'}, ${d.color2 || '#f4f4f0'})`; 
+        });
+
+        database.ref('game_guessword_v2').on('value', snapshot => {
+                const data = snapshot.val();
+                if(!data) {
+                    document.getElementById('question-text').innerText = "⚠️ ไม่พบข้อมูล (กรุณาบันทึกที่หน้า Admin)";
+                    return;
+                }
+                itemData = data;
+                renderGame();
+            })
+            .catch(err => {
+                document.getElementById('question-text').innerText = "เกิดข้อผิดพลาดในการโหลด: " + err.message;
+            });
+
+        function renderGame() {
+            if(!itemData) return;
+            const qEl = document.getElementById('question-text');
+            if (itemData.question && itemData.question.trim() !== '') {
+                qEl.innerText = itemData.question;
+                qEl.style.display = 'block';
+            } else {
+                qEl.innerText = '';
+                qEl.style.display = 'none';
+            }
+            renderCharacters(itemData.puzzle || '', itemData.answer || '');
+
+            isTimerEnabled = (itemData.is_timer_enabled == 1);
+            const gameArea = document.getElementById('game-area');
+            
+            if (isTimerEnabled) {
+                // กรณีมีนาฬิกา: ดันลงมา 5% เพื่อหลบนาฬิกา
+                document.getElementById('mini-timer').style.display = 'block';
+                document.getElementById('btn-timer').style.display = 'block';
+                gameArea.style.transform = "translateY(5%)"; 
+                setupTimer(itemData.timer || 60);
+            } else {
+                // กรณีไม่มีนาฬิกา: ดึงขึ้นไป 10% เพื่อให้ดูอยู่กึ่งกลางสายตา (แก้ปัญหาดูห้อยต่ำ)
+                document.getElementById('mini-timer').style.display = 'none';
+                document.getElementById('btn-timer').style.display = 'none';
+                gameArea.style.transform = "translateY(-10%)";
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function renderCharacters(puzzleStr, answerStr) {
+            const container = document.getElementById('puzzle-wrapper');
+            container.innerHTML = '';
+            const puzzleArr = puzzleStr.split(' ');
+            let answerArr = [];
+            if (window.Intl && Intl.Segmenter) {
+                const segmenter = new Intl.Segmenter('th', { granularity: 'grapheme' });
+                answerArr = Array.from(segmenter.segment(answerStr)).map(s => s.segment);
+            } else { answerArr = answerStr.split(''); }
+
+            let hiddenCounter = 0;
+            puzzleArr.forEach((char, index) => {
+                const span = document.createElement('span');
+                span.className = 'char-box';
+                if (char === '_') {
+                    hiddenCounter++;
+                    span.innerText = hiddenCounter; 
+                    span.classList.add('hidden-char');
+                    span.dataset.answer = answerArr[index] || '?';
+                    span.onclick = function() { revealOne(this); };
+                } else {
+                    span.innerText = char;
+                    span.dataset.answer = char;
+                }
+                container.appendChild(span);
+            });
+        }
+
+        // --- ระบบเวลา ---
+        function setupTimer(seconds) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timeLeft = parseInt(seconds);
+            updateTimerDisplay();
+        }
+        function toggleTimerManual() {
+            if (!isTimerEnabled) return;
+            if(isTimerRunning) { clearInterval(timerInterval); isTimerRunning = false; } 
+            else {
+                if(timeLeft <= 0) return;
+                isTimerRunning = true;
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) { clearInterval(timerInterval); isTimerRunning = false; }
+                }, 1000);
+            }
+        }
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('mini-timer');
+            const fmt = itemData.timer_format || 'digital';
+            if(fmt === 'digital') {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                timerEl.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            } else { timerEl.innerText = timeLeft; }
+            timerEl.className = (timeLeft <= 10) ? "mini-timer timer-warning" : "mini-timer timer-normal";
+        }
+        function stopTimer() { if(isTimerEnabled) { clearInterval(timerInterval); isTimerRunning = false; } }
+
+        // --- ระบบเฉลย ---
+        function revealOne(element) {
+            if (element.classList.contains('solved')) return; 
+            element.innerText = element.dataset.answer;
+            element.classList.remove('hidden-char');
+            element.classList.add('solved');
+            checkIfAllRevealed();
+        }
+        function revealAll() {
+            stopTimer();
+            document.querySelectorAll('.hidden-char').forEach(el => {
+                el.innerText = el.dataset.answer;
+                el.classList.remove('hidden-char');
+                el.classList.add('solved');
+            });
+            makeEverythingGreen();
+        }
+        function checkIfAllRevealed() {
+            if (document.querySelectorAll('.hidden-char').length === 0) { stopTimer(); makeEverythingGreen(); }
+        }
+        function makeEverythingGreen() { document.querySelectorAll('.char-box').forEach(c => c.classList.add('solved')); }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') { if(isTimerEnabled) toggleTimerManual(); }
+            if (event.code === 'Enter') revealAll();
+        });
+
+        // Listen for specific reveal command from its own admin panel
+        let lastCommandTimestamp = null;
+        database.ref('game_commands/guessword_v2').on('value', snapshot => {
+            const data = snapshot.val();
+            if (lastCommandTimestamp === null) {
+                lastCommandTimestamp = data ? data.timestamp : 0;
+                return; // Ignore on page load
+            }
+            if (data && data.action === 'reveal_all' && data.timestamp !== lastCommandTimestamp) {
+                lastCommandTimestamp = data.timestamp;
+                revealAll();
+            }
+        });
+    </script>
+</body>
+</html>

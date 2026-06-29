@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชมอร่อยชิงแชมป์ - Game Station</title>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Premium Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Animated Mesh Background -->
+    <div class="mesh-bg"></div>
+
+    <div class="app-container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <h1>ชมอร่อยชิงแชมป์</h1>
+            <p>Ultimate Game Station Experience</p>
+        </header>
+        
+        <!-- Bento Grid Layout -->
+        <div class="bento-grid" id="cards-wrapper">
+            
+            <!-- Game 1: Hero Card (Large) -->
+            <a href="game1.html" class="bento-card bento-large" target="_blank">
+                <i class="bi bi-grid-3x3-gap-fill bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                    </div>
+                    <h3>เกมเปิดป้าย</h3>
+                    <p>ทายวัตถุดิบปริศนาจากภาพ ถอดรหัสความอร่อยแบบสุดมันส์</p>
+                </div>
+            </a>
+
+            <!-- Game 2 -->
+            <a href="game_fillword.html" class="bento-card" target="_blank">
+                <i class="bi bi-fonts bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-fonts"></i>
+                    </div>
+                    <h3>เกมทายคำ</h3>
+                    <p>เติมคำในช่องว่าง ทดสอบความรู้รอบตัว (3 ข้อ)</p>
+                </div>
+            </a>
+
+            <!-- Game 3 -->
+            <a href="game_guessword_v2.html" class="bento-card" target="_blank">
+                <i class="bi bi-123 bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-123"></i>
+                    </div>
+                    <h3>เกมทายคำ V2</h3>
+                    <p>ทายคำปริศนาในรูปแบบตัวเลขสุดท้าทาย</p>
+                </div>
+            </a>
+
+            <!-- Game 4 -->
+            <a href="game_guessword_v3.html" class="bento-card" target="_blank">
+                <i class="bi bi-type bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-type"></i>
+                    </div>
+                    <h3>เกมทายคำ V3</h3>
+                    <p>เวอร์ชันอิสระ ปรับฟอนต์ & จัดบรรทัดได้ตามใจชอบ</p>
+                </div>
+            </a>
+
+            <!-- Tools -->
+            <a href="tool_ad_generator.html" class="bento-card bento-wide" target="_blank">
+                <i class="bi bi-palette-fill bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper" style="background: linear-gradient(135deg, rgba(160, 32, 240, 0.15), rgba(255, 0, 102, 0.15)); border-color: rgba(160, 32, 240, 0.3); color: #e020a0;">
+                        <i class="bi bi-palette-fill"></i>
+                    </div>
+                    <h3 style="color: #fff;">สร้างโฆษณา (Ad Generator)</h3>
+                    <p>เครื่องมือสร้างโฆษณา V9 ครบจบในตัวเดียว</p>
+                </div>
+            </a>
+
+            <!-- Timer -->
+            <a href="timer.html" class="bento-card" target="_blank">
+                <i class="bi bi-stopwatch-fill bg-icon"></i>
+                <div class="content">
+                    <div class="icon-wrapper" style="background: linear-gradient(135deg, rgba(0, 198, 255, 0.15), rgba(0, 114, 255, 0.15)); border-color: rgba(0, 198, 255, 0.3); color: #00a8ff;">
+                        <i class="bi bi-stopwatch-fill"></i>
+                    </div>
+                    <h3>นาฬิกาจับเวลา</h3>
+                    <p>Countdown Timer จอใหญ่เต็มตา</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <a href="dashboard.html" class="admin-fab" target="_blank">
+        <i class="bi bi-sliders"></i> จัดการหลังบ้าน
+    </a>
+
+    <!-- Interactive Mouse Tracking Glow Script -->
+    <script>
+        document.getElementById("cards-wrapper").onmousemove = e => {
+            for(const card of document.getElementsByClassName("bento-card")) {
+                const rect = card.getBoundingClientRect(),
+                      x = e.clientX - rect.left,
+                      y = e.clientY - rect.top;
+                card.style.setProperty("--mouse-x", `${x}px`);
+                card.style.setProperty("--mouse-y", `${y}px`);
+            };
+        }
+    </script>
+
+</body>
+</html>
